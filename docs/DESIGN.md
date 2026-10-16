@@ -23,6 +23,22 @@ agree with the current global state.
 | `Snapshot` | Revision and detached global state dictionary |
 | `View` | Participant, revision, and visible records |
 
+## Public operations
+
+| Operation | Result |
+|---|---|
+| `Ledger(path=":memory:")` | Open a dedicated ledger database |
+| `revision` | Current global commit revision |
+| `commit(transition, expected_revision=..., intent=None, request_id=None)` | Atomic `Commit` receipt |
+| `get_commit(request_id)` | Privileged original receipt, or `None` |
+| `snapshot(at_revision=None)` | Global state at the selected revision |
+| `view(participant=None, at_revision=None, after_revision=0, kinds=None, last=None)` | Scoped and optionally filtered records |
+| `history(at_revision=None)` | Complete privileged history through a revision |
+| `close()` / context manager | Close the owned connection |
+
+Parameters following `transition` are keyword-only. The view parameters after
+`participant` are also keyword-only. The usage guide shows complete examples.
+
 Kinds and JSON content are application-defined. `claim`, `observation`, `note`,
 and the example action names are conventions, not registered or special types.
 The kernel does not turn any record kind into a state update.
@@ -70,6 +86,13 @@ Revision 0 is the empty initial state. A nonexistent future revision is an error
 When rules read both state and participant context, use the same explicit
 revision for both. This does not recreate a model's earlier hidden reasoning.
 
+View filters do not broaden its audience. `kinds` is a tuple/list of nonempty
+strings; an empty collection returns no records. `after_revision` excludes
+all records through that revision and must not exceed the read point. A positive
+`last` takes the newest matching records and returns them in chronological order.
+It is a context window, not a pagination cursor. Records in one commit keep their
+original ordinal. `View.revision` is the upper read point even for an empty result.
+
 ## Commit, concurrency, and retry
 
 ```python
@@ -91,11 +114,16 @@ intent, and transition must match the first use after JSON key/audience ordering
 is normalized. A match returns the original commit, even if the current revision
 has advanced. A mismatch raises `RequestConflict`. The ID is scoped to one ledger.
 
-State effects and published records are stored in a single journal row in one
-SQLite transaction. There is no second independently saved state file. Historical
-state is rebuilt by applying the recorded updates/deletions in order, without
-rerunning models or tools. A database insertion failure must leave the previous
-history readable and the request ID available for a later successful attempt.
+`get_commit(request_id)` provides a direct host lookup of the original receipt
+before replaying application work. A caller should keep IDs unique per logical
+operation. This lookup is not a lock around external work or a substitute for
+the commit's fingerprint and revision checks.
+
+The authoritative commit payload and its state/record query projections share
+one SQLite transaction. There is no independently saved state file. Historical
+state reads select the latest value/deletion per key at that revision, without
+decoding full action payloads or rerunning models/tools. Projection or journal
+insertion failure leaves the previous history and request IDs unchanged.
 
 Model calls and external effects happen outside this transaction. If a tool ran
 before a failed commit, it may already have caused effects or incurred cost.
@@ -109,15 +137,34 @@ and can also be explicitly closed. One instance belongs to one thread. Multiple
 connections to the same file are supported; read-modify-write conflicts are
 reported through revisions. A SQLite lock timeout can still raise an SQLite error.
 
-Schema version 1 is checked on open. Unrelated databases and unsupported schema
-versions are refused. There is no schema migration, compaction, encryption,
-tamper-evidence, authorization server, or untrusted-code boundary in this alpha.
+Schema version 2 is checked on open. Version 1 upgrades atomically by indexing
+its unchanged journal; a failed upgrade rolls back its new tables and version.
+Unrelated or unsupported databases are refused. This alpha has no compaction,
+encryption, tamper-evidence, authorization server, or untrusted-code boundary.
 Give the ledger object only to trusted host code; participant IDs are selectors,
 not authenticated identities. Do not send `history()` or `snapshot()` to a model
 unless you intentionally want that model to receive host data.
 
 The core does not schedule participants. A script, graph framework, game loop,
 or server can choose the order and pass the scoped JSON to its own adapters.
-No third-party agent framework integration has been exercised yet. The current
-implementation scans the journal for reads and suits small exploratory sessions;
-large histories will need indexing/checkpoints and measured performance work.
+An optional LangGraph integration is exercised separately; see LANGGRAPH.md.
+Normal views read indexed public/addressed records, and snapshots read per-key
+state versions. Complete `history()` still reads the journal. Large production
+histories and arbitrary speculative branch management remain unvalidated.
+
+## Schema v2
+
+| Table | Purpose / key |
+|---|---|
+| `asc_meta` | One schema-version row |
+| `commits` | Original payload, UTC time, optional unique request ID and fingerprint; revision primary key |
+| `state_versions` | Value or deletion per `(key, revision)` |
+| `record_projection` | Body/source/kind/public flag per `(revision, ordinal)` |
+| `record_audience` | Addressed recipients, keyed by `(participant, revision, ordinal)` |
+
+Public record reads use `(is_public, revision, ordinal)` indexing; addressed reads
+use the audience primary key and record primary key. State selection uses its
+per-key revision key. Scope filtering happens before record JSON is decoded.
+The journal remains the source for projections created during migration.
+Application code must not manually edit those tables. Read operations pin one
+SQLite read transaction so the reported revision and query result agree.

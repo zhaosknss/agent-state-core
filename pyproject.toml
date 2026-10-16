@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-state-core"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Composable state, scoped observations, and action commits for agents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,6 +21,9 @@ classifiers = [
 Repository = "https://github.com/zhaosknss/agent-state-core"
 Issues = "https://github.com/zhaosknss/agent-state-core/issues"
 Discussions = "https://github.com/zhaosknss/agent-state-core/discussions"
+
+[project.optional-dependencies]
+langgraph = ["langgraph==1.2.15"]
 
 [tool.setuptools.packages.find]
 include = ["agent_state_core*"]

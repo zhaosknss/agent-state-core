@@ -1,83 +1,49 @@
-# Local validation evidence
+# Validation evidence
 
-Checked on 2026-10-17 (Asia/Shanghai) on Windows with Python 3.13.3,
-SQLite from that Python installation, and setuptools 82.0.1. These are local
-checks, not results from GitHub Actions or a model benchmark.
+Checked on 2026-10-17 (Asia/Shanghai). This report describes alpha 2. The original alpha-1 release and its CI remain available from the repository's Releases page.
 
-## Behavior and examples
+## Local behavior and actual integration
 
-```powershell
-python -I -B tools/verify.py
+Environment: Windows, Python 3.13.3. Core build tooling: setuptools 82.0.1. Optional LangGraph version: 1.2.15; its exact tested dependency environment is pinned in requirements/langgraph-test.txt and recorded in langgraph-environment.json.
+
+```bash
+python -B tools/verify.py
+python -B tools/verify.py --langgraph
 ```
 
-Result: **20 tests passed; both examples completed; 0 network attempts**.
-The source run took 0.154 seconds for tests plus examples; this is an
-execution record, not a performance benchmark.
+The core suite has **28 tests** and two examples. With the optional real integration installed, **32 tests** and three examples run. The local integration run passed with **0 network connection/DNS/send attempts**. A dependency creates a socket and probes local IPv6 support during import; the runner tracks socket creation separately. It permits loopback capability probing and blocks network connection, DNS, send, and non-loopback bind attempts. These are checks of trusted test code, not a sandbox for hostile code.
 
-The tests exercise participant/public/host-only projections, a false claim and
-outdated observations, historical reads, rejected actions, stale proposals,
-duplicate and conflicting requests, source references, detached mutable values,
-strict JSON validation, custom action/state schemas, deletion, reopening a file,
-competing writers, a failed SQLite insertion, and refusing unrelated/future-schema
-databases without modifying them. The write-failure test uses an SQLite ABORT
-trigger; it is not a power-loss or failing-hardware experiment.
+Coverage includes:
 
-On the initial run, three Windows test-fixture cleanup failures exposed SQLite
-connections that were not explicitly closed by the test code. The fixtures were
-corrected to close them; the final suite above completed without cleanup errors.
+- Audience filtering, false claims, outdated observations, historic read points, hidden source references, detached mutable values, and custom JSON schemas.
+- Rejected actions, stale results, deduplication, conflicting request IDs, deletion, reopened databases, concurrent writers, and failed writes.
+- Filter ordering and windows, targeted state/view reads without access to full commit payloads, request lookup, and atomic projection-write rollback.
+- Schema-v1 migration, retained historical state and request identity, and failed migration rollback followed by successful retry.
+- Real LangGraph interrupt/resume, a private requirement of the same kind as the public requirement, replay of a logical review, invalid human input, and execution of the documented example.
 
-The examples produced these material results:
+The LangGraph example uses InMemorySaver for in-process demonstration. It does not validate durable graph recovery, real model reasoning, or exactly-once external effects.
 
-- Global key holder is `bob`; Carol receives only the earlier `alice` observation,
-  an unverified `alice` claim, and her rejected action result. The public view has
-  only the earlier observation. Reopening the database preserves revision 4.
-- A proposal based on budget 100 is rejected after the human changes it to 50;
-  the application commits a new plan costing 50 at revision 3.
+The twelve Python code blocks in both READMEs and both usage guides were executed in temporary working directories. The built wheel also passed the 32-test integration suite and three examples using isolated Python and importing the core from the wheel rather than the source checkout.
 
-The verification runner blocks socket construction, connection, and DNS lookup
-via a Python audit hook. No model adapter is installed or invoked by these checks.
+## Reproducible read comparison
 
-## Initial local artifact, before the public release
-
-```powershell
-python -B -m pip wheel . --no-deps --no-build-isolation --no-index --wheel-dir dist
+```bash
+python tools/benchmark_reads.py --commits 1000 --repeats 20
 ```
 
-Built `agent_state_core-0.1.0a1-py3-none-any.whl` (9,159 bytes), SHA-256:
+On the same local in-memory ledger, 1000 private 2-KiB records and state updates were followed by one visible record. The comparison reads both state and participant information. The baseline uses the alpha-1 full-history algorithm; the new path uses query projections. Outputs were equal.
 
-```text
-c8f0480b82db02d59bf078988af58537d8bdf27700b3851aaf49cd2d9d17c989
-```
+| Measurement | Median |
+|---|---:|
+| Alpha-1 read algorithm | 10.338 ms |
+| Indexed alpha-2 reads | 0.094 ms |
 
-The wheel contains the three package modules, metadata, and the MIT license.
-Metadata declares Python >=3.11, MIT, and no runtime dependencies. The build used
-locally available tooling with package-index access disabled; no install into the
-user's Python environment was performed.
+This specific shape favors scope-based selection. The result is not a general performance claim or a measurement of model latency. Projection storage costs extra writes and space; large production histories and disk workloads remain unvalidated.
 
-The same behavior checks and both examples were then run against the wheel,
-using isolated Python from outside the source checkout:
+## Packaging and remote checks
 
-```powershell
-python -I -B /path/to/agent-state-core/tools/verify.py --wheel /path/to/agent_state_core-0.1.0a1-py3-none-any.whl
-```
+Build the package with `python -m pip wheel . --no-deps --no-build-isolation --no-index --wheel-dir dist` when build tooling is already installed. Test the resulting artifact from outside the checkout with `python -I -B /path/to/tools/verify.py --wheel /path/to/file.whl`; add `--langgraph` in an environment containing the optional dependency. The runner checks that the core was imported from the wheel.
 
-Result: **20 tests passed; both examples completed; 0 network attempts** in
-0.194 seconds. The runner confirmed the imported package came from the wheel,
-not the source directory. Its modules and license were also compared byte for
-byte with the checkout and matched. The artifact is a local build and has not
-been uploaded. Python 3.11 syntax parsing, local Markdown link checks, a token
-pattern scan, and wheel ZIP integrity checks completed successfully.
+Release notes and SHA256SUMS.txt identify the exact published artifact and checked CI run. Remote status is available in [Behavior checks](https://github.com/zhaosknss/agent-state-core/actions/workflows/test.yml). Core CI targets Ubuntu/Windows on Python 3.11/3.13; optional integration CI targets Ubuntu/Python 3.11 and Windows/Python 3.13. A configured matrix alone is not evidence of a pass.
 
-## CI and remaining limits
-
-The CI configuration targets Ubuntu and Windows with Python 3.11 and 3.13.
-Local evidence above covers Python 3.13.3 on Windows. Current remote results are
-available in [Behavior checks](https://github.com/zhaosknss/agent-state-core/actions/workflows/test.yml);
-release notes link the specific run checked for that release. A configured matrix
-alone is not evidence that it passed.
-
-No real model behavior, framework adapter, arbitrary branch recovery,
-large-history performance, multi-tenant authorization, or semantic consistency
-judge has been validated. Release assets may differ from the initial local wheel
-above as README and package metadata are prepared for publication; the release
-includes its own SHA-256 checksums.
+No real model quality, additional framework adapters, arbitrary branch manager, semantic consistency judge, multi-tenant authorization, or production-scale workload has been validated.

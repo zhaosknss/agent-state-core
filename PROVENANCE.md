@@ -2,8 +2,9 @@
 
 The initial implementation was written for this repository. No source code from
 Graphiti, Generative Agents, Concordia, LangGraph, or other third-party agent
-frameworks was copied or vendored. Those projects are comparison/design references,
-not dependencies or validated integrations.
+frameworks was copied or vendored. Alpha 2 uses LangGraph as an actual optional
+dependency, while Apache Burr is a storage design reference. Fixed revisions,
+inspected files, licenses, and use are documented in [upstream review](docs/UPSTREAM.md).
 
 The design grew from mechanisms in the oc-world story application. The source
 review used commit `266b2141d1f0fb752133d612f0151b2e69e64e5e` as a reference:
@@ -31,7 +32,9 @@ Related projects for comparison:
 - [LangGraph](https://github.com/langchain-ai/langgraph): orchestration,
   persistence, and human intervention.
 
-The runtime depends only on the Python standard library (including SQLite).
+The core runtime depends only on the Python standard library (including SQLite).
+The optional LangGraph integration has its own dependency closure and tests;
+it is not installed for core-only users.
 Setuptools is the build backend (82.0.1 used for the initial local build).
 The CI workflow pins these official actions, whose root licenses were checked
 at the indicated revisions on 2026-10-17; they run on Node 24 in CI:
