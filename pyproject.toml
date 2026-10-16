@@ -17,5 +17,10 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[project.urls]
+Repository = "https://github.com/zhaosknss/agent-state-core"
+Issues = "https://github.com/zhaosknss/agent-state-core/issues"
+Discussions = "https://github.com/zhaosknss/agent-state-core/discussions"
+
 [tool.setuptools.packages.find]
 include = ["agent_state_core*"]

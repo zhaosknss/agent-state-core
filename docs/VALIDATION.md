@@ -37,7 +37,7 @@ The examples produced these material results:
 The verification runner blocks socket construction, connection, and DNS lookup
 via a Python audit hook. No model adapter is installed or invoked by these checks.
 
-## Built artifact
+## Initial local artifact, before the public release
 
 ```powershell
 python -B -m pip wheel . --no-deps --no-build-isolation --no-index --wheel-dir dist
@@ -68,10 +68,16 @@ byte with the checkout and matched. The artifact is a local build and has not
 been uploaded. Python 3.11 syntax parsing, local Markdown link checks, a token
 pattern scan, and wheel ZIP integrity checks completed successfully.
 
-## Still unverified
+## CI and remaining limits
 
-The CI configuration targets Ubuntu and Windows with Python 3.11 and 3.13,
-but that remote matrix has not run. Local evidence covers only Python 3.13.3
-on Windows. No real model behavior, framework adapter, arbitrary branch recovery,
+The CI configuration targets Ubuntu and Windows with Python 3.11 and 3.13.
+Local evidence above covers Python 3.13.3 on Windows. Current remote results are
+available in [Behavior checks](https://github.com/zhaosknss/agent-state-core/actions/workflows/test.yml);
+release notes link the specific run checked for that release. A configured matrix
+alone is not evidence that it passed.
+
+No real model behavior, framework adapter, arbitrary branch recovery,
 large-history performance, multi-tenant authorization, or semantic consistency
-judge has been validated.
+judge has been validated. Release assets may differ from the initial local wheel
+above as README and package metadata are prepared for publication; the release
+includes its own SHA-256 checksums.

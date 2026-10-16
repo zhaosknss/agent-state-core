@@ -9,8 +9,13 @@ publicly** separate. An agent can retain an outdated observation or receive a
 false claim without that claim rewriting shared state. Applications choose the
 rules, participants, model providers, and interaction order.
 
-This is a local alpha implementation. The working project name is provisional;
-there is no published package or hosted service yet.
+This is an early open-source alpha. I extracted these ideas from a project I was
+building and would like people to try them in their own applications. Feedback
+on real use cases, awkward interfaces, and missing pieces is welcome.
+
+[Try the release](https://github.com/zhaosknss/agent-state-core/releases) ·
+[Share feedback](https://github.com/zhaosknss/agent-state-core/discussions) ·
+[Report a problem](https://github.com/zhaosknss/agent-state-core/issues)
 
 ## Quick start
 
@@ -18,14 +23,23 @@ Requires Python 3.11+; the runtime uses only the standard library.
 From this checkout, no installation or API key is needed:
 
 ```bash
+git clone https://github.com/zhaosknss/agent-state-core.git
+cd agent-state-core
 python -m examples.information_flow
 python -m examples.collaboration
 python -m unittest discover -s tests -v
 ```
 
-To use the package from another project, install this checkout with `python -m
-pip install /path/to/agent-state-core`. Build dependencies may need to be
-available to pip; this is a local path, not a package-index release.
+To use it from another project, download the wheel from
+[Releases](https://github.com/zhaosknss/agent-state-core/releases) and install it:
+
+```bash
+python -m pip install ./agent_state_core-0.1.0a1-py3-none-any.whl
+```
+
+You can also install a local checkout with `python -m pip install
+/path/to/agent-state-core`. Build dependencies may need to be available to pip.
+The project is not published on PyPI.
 
 ## A small example
 
@@ -88,6 +102,18 @@ transaction and may still run or be billed more than once.
 
 See [API and semantics](docs/DESIGN.md), [source and design origins](PROVENANCE.md),
 and [validation evidence](docs/VALIDATION.md).
+
+## Try it and tell me what you think
+
+I would like to hear where this fits in something you are building, which parts
+are useful, and where the API gets in your way. If your use case needs a
+different approach, that is useful feedback too.
+
+You can start a [discussion](https://github.com/zhaosknss/agent-state-core/discussions)
+with an idea or question. For a bug, an
+[issue](https://github.com/zhaosknss/agent-state-core/issues) with a small example,
+what you expected, and what happened would help me reproduce it. See
+[contributing](CONTRIBUTING.md) if you want to change the code.
 
 ## License
 
