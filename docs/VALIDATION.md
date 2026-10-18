@@ -1,6 +1,30 @@
 # Validation evidence
 
-Checked on 2026-10-17 (Asia/Shanghai). This report describes alpha 2. The original alpha-1 release and its CI remain available from the repository's Releases page.
+## Unreleased checkout update — 2026-10-19
+
+On Windows/Python 3.13.3, the updated checkout passed **37 tests and four
+examples**, including the optional real LangGraph 1.2.15 integration. Of these,
+33 tests and three examples need only the standard library. The runner reported
+zero network connection/DNS/send attempts and one local socket capability probe.
+
+The new context-handoff checks cover cross-project and audience exclusion,
+historical reads, latest-visible ordering, withdrawal deltas, unchanged caches
+after empty deltas, and candidates remaining separate from authoritative state.
+The four Python blocks in both handoff guides were executed in temporary
+directories; local links in the changed usage documents were checked.
+
+A fresh, unpublished wheel built offline with setuptools 82.0.1 passed the same
+37-test/four-example check using isolated Python and importing the core from the
+wheel. Checkout examples remain outside the wheel. This check does not replace
+the published alpha-2 artifacts or establish model reasoning, automatic chat
+integration, or reduced feedback/token use.
+
+The historical alpha-2 release evidence follows. Its counts and artifacts describe
+that release, rather than the new checkout recipe.
+
+## Published alpha-2 evidence — 2026-10-17
+
+Checked on 2026-10-17 (Asia/Shanghai). The original alpha-1 release and its CI remain available from the repository's Releases page.
 
 ## Local behavior and actual integration
 

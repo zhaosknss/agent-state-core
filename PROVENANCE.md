@@ -33,6 +33,9 @@ Related projects for comparison:
   persistence, and human intervention.
 
 The core runtime depends only on the Python standard library (including SQLite).
+The context-handoff recipe is original example code with fictional messages and
+application-defined note policy; it includes no private chat exports or model
+output dataset. It adds no upstream code or dependency.
 The optional LangGraph integration has its own dependency closure and tests;
 it is not installed for core-only users.
 Setuptools is the build backend (82.0.1 used for the initial local build).

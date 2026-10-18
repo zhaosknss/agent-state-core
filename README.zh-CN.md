@@ -68,6 +68,7 @@ git clone https://github.com/zhaosknss/agent-state-core.git
 cd agent-state-core
 python -m examples.information_flow
 python -m examples.collaboration
+python -m examples.context_handoff
 python -B tools/verify.py
 ```
 
@@ -111,6 +112,12 @@ with Ledger() as ledger:  # 换成文件路径即可持续保存。
 ```
 
 `audience=None` 表示公开，`("alice", "bob")` 表示指定接收者，`()` 表示只给宿主保留。应用已经判定交接成功，库负责保存结果和信息范围。`observation`、`claim` 等记录种类由应用自定。
+
+## 上下文交接与理解修订
+
+当前源码新增[可运行的交接示例](docs/CONTEXT_HANDOFF.zh-CN.md)：理解作为候选记录，保留适用项目、范围和来源；后来反馈可以修订或撤回。新对话取得最后可见的变化，完整历史仍可回看，也能区分“本次采用”与“以后作为理想模板”。
+
+运行 `python -m examples.context_handoff` 即可。示例使用虚构消息、普通函数和现有接口，辅助函数与组织策略位于示例中，没有写成核心的强制规则。自动提取、读取聊天和安排讨论仍需上层接入，示例不证明模型效果或反馈次数改善。这是 Unreleased 源码更新，现有 alpha 2 发布包不包含新示例。
 
 ## 实际接入 LangGraph
 

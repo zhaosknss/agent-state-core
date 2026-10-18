@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Added a runnable context-handoff recipe: project-scoped candidate notes,
+  compact source references, explicit revisions and withdrawals, and delta reads.
+  It uses existing APIs, fictional messages, and no model calls. The recipe's
+  schema and latest-visible-key policy are application choices, not kernel rules.
+- Added behavior checks for handoff visibility, historical reads, withdrawal
+  handling, and private updates; included the recipe in the verification runner.
+- Skip the unused request fingerprint when `commit()` has no `request_id`.
+  Requests with an id retain the same deduplication and compatibility checks.
+
 ## 0.1.0a2
 
 - Expanded English/Chinese introductions, capability tables, architecture,

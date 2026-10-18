@@ -231,7 +231,7 @@ class Ledger:
         if request_id is not None:
             _label(request_id, "request_id")
         payload = _encode(_payload(transition, intent))
-        fingerprint = hashlib.sha256(
+        fingerprint = "" if request_id is None else hashlib.sha256(
             _encode({"base": expected_revision, "payload": json.loads(payload)}).encode("utf-8")
         ).hexdigest()
         with self._write():

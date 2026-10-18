@@ -110,6 +110,10 @@ revision. Domain time can be carried in application-defined record content.
 
 ## Next steps
 
+Use the [context-handoff recipe](CONTEXT_HANDOFF.md) for project-scoped candidate
+notes, explicit revision/withdrawal, and incremental context without a fixed
+agent workflow. It is a checkout example, not a new core schema or model adapter.
+
 Run the [LangGraph example](LANGGRAPH.md) to see actual pause/resume orchestration.
 Use [operations](OPERATIONS.md) for backups, schema upgrades, and troubleshooting.
 The core does not impose a conversation recipe or require those integrations.

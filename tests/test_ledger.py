@@ -6,6 +6,7 @@ import sqlite3
 from tempfile import TemporaryDirectory
 from threading import Barrier
 import unittest
+from unittest.mock import patch
 
 from agent_state_core import (
     Intent, Ledger, Record, RequestConflict, SchemaError, StaleRevision, Transition,
@@ -97,6 +98,14 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(self.ledger.revision, 2)
         self.assertEqual(self.ledger.snapshot().state, {"x": 2})
         self.assertEqual(len(self.ledger.view().records), 1)
+
+    def test_commit_without_request_id_does_not_compute_deduplication_hash(self):
+        with patch("agent_state_core.ledger.hashlib.sha256", side_effect=AssertionError("unused hash")):
+            receipt = self.ledger.commit(Transition(updates={"x": [1]}, records=(
+                Record("note", {"value": 1}, None),)), expected_revision=0)
+        self.assertIsNone(receipt.request_id)
+        self.assertEqual(self.ledger.snapshot().state, {"x": [1]})
+        self.assertEqual(self.ledger.view().records[0].body, {"value": 1})
 
     def test_request_id_cannot_be_reused_for_changed_content(self):
         transition = Transition(updates={"x": 1})

@@ -40,20 +40,21 @@ def main():
 
     if not str(agent_state_core.__file__).startswith(str(package_path)):
         raise RuntimeError("Verification imported a different package copy")
+    # Recipes remain in the checkout; keep the wheel first for all core imports.
+    sys.path.append(str(root))
     started = perf_counter()
     suite = unittest.TestLoader().discover(str(root / "tests"))
     if args.langgraph:
-        sys.path.append(str(root))  # Example adapters live in the checkout, not the wheel.
         suite.addTests(unittest.TestLoader().discover(str(root / "integration_tests")))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         return 1
-    for name in ("information_flow", "collaboration"):
+    for name in ("information_flow", "collaboration", "context_handoff"):
         runpy.run_path(str(root / "examples" / f"{name}.py"), run_name="__main__")
     if args.langgraph:
         runpy.run_path(str(root / "examples" / "langgraph_collaboration.py"), run_name="__main__")
     print(json.dumps({
-        "tests": result.testsRun, "examples": 3 if args.langgraph else 2,
+        "tests": result.testsRun, "examples": 4 if args.langgraph else 3,
         "network_attempts": len(network_attempts),
         "socket_creations": len(socket_creations),
         "package": str(agent_state_core.__file__),

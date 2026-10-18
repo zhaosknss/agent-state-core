@@ -68,6 +68,7 @@ git clone https://github.com/zhaosknss/agent-state-core.git
 cd agent-state-core
 python -m examples.information_flow
 python -m examples.collaboration
+python -m examples.context_handoff
 python -B tools/verify.py
 ```
 
@@ -111,6 +112,12 @@ with Ledger() as ledger:  # Pass a file path for persistence.
 ```
 
 `audience=None` is public, a tuple of IDs is addressed, and `()` is host-only. The application chose that the transfer succeeded; the library stores its result and information scope. Kinds such as `observation` and `claim` are application conventions.
+
+## Context handoff and revised understanding
+
+The current checkout includes a [handoff recipe](docs/CONTEXT_HANDOFF.md) for sharing candidate interpretations with their project, scope, and source. Later feedback can revise or withdraw a note; a new conversation receives the latest visible changes while the full history remains available. A delivery accepted for today can stay distinct from an ideal template for future work.
+
+Run `python -m examples.context_handoff`. It uses fictional messages, ordinary functions, and existing APIs. The helpers and latest-visible-key policy live in the example, not the installed core package. Automatic extraction, chat access, and coordination remain application work; the example does not establish model quality or fewer user corrections. This is an Unreleased source addition, not part of the existing alpha-2 artifacts.
 
 ## Real LangGraph integration
 
