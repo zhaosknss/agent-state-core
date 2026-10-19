@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added `RecordCursor`, `ViewPage`, and `Ledger.view_page()` for oldest-first,
+  scoped record paging within a commit, pinned read points, and resumable positions.
+  Existing `view(last=...)` remains a newest context window. The two APIs share
+  indexed audience projection; no database schema or dependency change is needed.
+- Added paging behavior tests, migration coverage, a runnable standard-library
+  checkpoint example, and bilingual paging guides. Progress storage and external
+  effects remain application-owned; this is not exactly-once queue delivery.
+
 - Added a real LangChain Core 1.6.11 storage/Runnable recipe using only a scoped
   View, with participant-specific caches, retained sources, and explicit rebuilds.
   Lookup is keyword matching; no model or vector search is implied. The core

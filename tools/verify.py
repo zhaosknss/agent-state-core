@@ -52,14 +52,14 @@ def main():
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         return 1
-    for name in ("information_flow", "collaboration", "context_handoff"):
+    for name in ("information_flow", "collaboration", "context_handoff", "paged_records"):
         runpy.run_path(str(root / "examples" / f"{name}.py"), run_name="__main__")
     if args.langgraph:
         runpy.run_path(str(root / "examples" / "langgraph_collaboration.py"), run_name="__main__")
     if args.retrieval:
         runpy.run_path(str(root / "examples" / "langchain_retrieval.py"), run_name="__main__")
     print(json.dumps({
-        "tests": result.testsRun, "examples": 3 + int(args.langgraph) + int(args.retrieval),
+        "tests": result.testsRun, "examples": 4 + int(args.langgraph) + int(args.retrieval),
         "network_attempts": len(network_attempts),
         "socket_creations": len(socket_creations),
         "package": str(agent_state_core.__file__),

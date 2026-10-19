@@ -71,7 +71,7 @@ that every composition is supported.
 | Boundary | Observed behavior | Integration consequence |
 |---|---|---|
 | Global commit revision | A records-only note invalidates a proposal's old revision even when state is unchanged; disjoint key updates also conflict | Re-read and reassess stale work; do not blindly substitute a new revision |
-| `last` is a context window | Five records in one commit with `last=2` return only the newest two; advancing to `View.revision` skips the other three | For complete deltas, omit `last` and finish consuming the result before advancing the revision |
+| `last` is a context window | Five records in one commit with `last=2` return only the newest two; advancing to `View.revision` skips the other three | Use the new [record paging API](PAGING.md) for bounded consumption, or omit `last` and consume the complete delta |
 | One connection belongs to one thread | Sharing a `Ledger` with a worker fails; opening a separate connection in the worker to the same file works | Own the connection where SQLite work executes; separate in-memory ledgers do not share data |
 | Dedicated SQLite schema | A foreign database or an extra application table is refused | Use a dedicated ledger file; there is no shared external transaction/backend interface |
 | Strict JSON and whole-value updates | External objects need explicit conversion; nested updates replace the top-level value | Adapt object schemas and compute intended updates in host code |
@@ -86,10 +86,9 @@ connection lifecycle and tests; this recipe does not provide one.
 
 ## Where the core could improve
 
-Reliable bounded incremental consumption, explicitly managed asynchronous
-integration, and more selective stale-work checks are useful next candidates.
-A record cursor must account for multiple records within one revision. A more
-selective conflict check must preserve dependencies on records as well as state.
-These are design candidates, not implemented APIs or a commitment to merge
-concurrent decisions automatically. [Validation](VALIDATION.md) records actual
-checks and their limits.
+The Unreleased [record paging API](PAGING.md) now supports bounded incremental
+consumption, including several records in one revision and saved positions.
+Asynchronous integration and more selective stale-work checks remain candidates.
+A selective conflict check must preserve dependencies on records as well as state;
+there is no commitment to merge concurrent decisions automatically.
+[Validation](VALIDATION.md) records actual checks and their limits.

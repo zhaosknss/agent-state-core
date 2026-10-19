@@ -60,7 +60,9 @@ journal/query projections manually; schema ownership is checked on open.
 
 Scoped record reads use public/audience indexes. State reads use per-key versions.
 Complete `history()` intentionally reads the full journal. `last` bounds the
-returned context but is not a pagination cursor. The journal and its projections
+returned context but is not a pagination cursor. The Unreleased [view_page API](PAGING.md)
+provides bounded continuation; maintain separate checkpoints per ledger and selection.
+The journal and its projections
 duplicate some data; no compaction or retention policy is supplied.
 
 Reproduce the synthetic read comparison with `python tools/benchmark_reads.py`.

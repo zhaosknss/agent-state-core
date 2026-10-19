@@ -32,6 +32,7 @@ agent-state-core 是一个轻量的 Python＋SQLite 库，保存共享状态、�
 git clone https://github.com/zhaosknss/agent-state-core.git
 cd agent-state-core
 python -m examples.context_handoff
+python -m examples.paged_records
 python -m examples.information_flow
 python -m examples.collaboration
 python -B tools/verify.py
@@ -40,10 +41,11 @@ python -B tools/verify.py
 | 示例 | 可以直接看到什么 |
 |---|---|
 | [上下文交接](docs/CONTEXT_HANDOFF.zh-CN.md) | 带来源与范围的候选理解，后续修订、撤回及增量读取 |
+| [分页读取](docs/PAGING.zh-CN.md) | 同一提交跨页读全，新增写入时固定上界，保存游标后恢复 |
 | [信息流](examples/information_flow.py) | 私下交接、旧观察、错误说法、失败行动，以及重新打开存档 |
 | [协作与条件变化](examples/collaboration.py) | 预算由 100 变为 50，基于旧版本的方案无法覆盖新状态 |
 
-交接和检索示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它们。
+分页接口、交接和检索示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它们。
 在自己的项目里使用核心，可以下载 [Releases](https://github.com/zhaosknss/agent-state-core/releases) 中的 wheel，或安装源码目录：
 
 ```powershell
@@ -65,6 +67,7 @@ python -m pip install .
 | 持续保存 | SQLite 文件保存历史；关闭后重新打开可以继续读取和提交 |
 | 历史回看 | 按版本读取当时的状态和可见记录，排除之后发生的内容 |
 | 按需取上下文 | 按记录种类、版本范围和最近匹配条数筛选 |
+| 逐批完整读取 | Unreleased `view_page()` 支持提交内续读、固定读取上界和进度恢复 |
 | 防止过期覆盖 | 提交时核对基础版本，不匹配就返回 `StaleRevision` |
 | 本地提交去重 | 同一请求、基础版本、意图和结果完全一致时，取回原提交 |
 | 查询既有结果 | 宿主先按请求 ID 查已提交结果，再决定是否重做节点工作 |
@@ -197,6 +200,7 @@ alpha 2 改为按接收范围查询记录、按字段版本读取状态，避免
 - [完整中文指南](docs/GUIDE.zh-CN.md)：状态、信息、行动、查询与重试。
 - [接口与架构](docs/DESIGN.md)：精确语义和数据库结构。
 - [组合指南](docs/COMPOSITION.zh-CN.md)：可运行的检索组合、适配分工和已复现限制。
+- [分页读取](docs/PAGING.zh-CN.md)：逐批读全记录，以及由应用保存和恢复进度。
 - [LangGraph 接入](docs/LANGGRAPH.md)：安装、暂停恢复与存储分工。
 - [运行与排错](docs/OPERATIONS.md)：升级、备份、验证和常见错误。
 - [验证记录](docs/VALIDATION.md)、[上游核查](docs/UPSTREAM.md)、[版本变化](CHANGELOG.md)。

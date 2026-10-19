@@ -159,8 +159,15 @@ def window_is_not_queue():
         window = ledger.view(after_revision=0, last=2)
         assert [record.body for record in window.records] == [3, 4]
         assert ledger.view(after_revision=window.revision).records == ()
+        page = ledger.view_page(limit=2)
+        seen = list(page.records)
+        while page.has_more:
+            page = ledger.view_page(after=page.next_cursor, at_revision=1, limit=2)
+            seen.extend(page.records)
+        assert [record.body for record in seen] == list(range(5))
         return {"total_records": 5, "window_records": 2,
-                "unseen_if_window_revision_used_as_queue_cursor": 3}
+                "unseen_if_window_revision_used_as_queue_cursor": 3,
+                "records_consumed_with_view_page": len(seen)}
 
 
 def project_filter_is_application_policy():

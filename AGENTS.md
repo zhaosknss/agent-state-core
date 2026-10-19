@@ -23,5 +23,7 @@ For the separate LangChain Core recipe use `requirements/retrieval-test.txt`
 and `--retrieval`. Reproduce composition boundaries with
 `python -B tools/audit_composition.py`; restrictions are deliberate observations,
 not assertions of universal compatibility. See docs/COMPOSITION.md.
+Record paging uses `RecordCursor`/`ViewPage`; preserve `view(last=...)` semantics
+and fixed-scope checkpoints. See docs/PAGING.md before changing continuation.
 Offline integration CI disables upstream tracing with `LANGSMITH_TRACING=false`
 and `LANGCHAIN_TRACING_V2=false`; these are not core configuration fields.

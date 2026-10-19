@@ -86,6 +86,31 @@ class View:
         })
 
 
+@dataclass(frozen=True)
+class RecordCursor:
+    """Consumed position in one ledger and a fixed participant/kinds scope.
+
+    An ordinal identifies a record within a revision. None means the complete
+    revision has been consumed, including commits without matching records.
+    """
+
+    revision: int
+    ordinal: int | None = None
+
+
+@dataclass(frozen=True)
+class ViewPage:
+    participant: str | None
+    revision: int
+    records: tuple[VisibleRecord, ...]
+    next_cursor: RecordCursor
+    has_more: bool
+
+    def to_context(self) -> dict[str, JSON]:
+        """Supply only detached scoped records, like View.to_context()."""
+        return View(self.participant, self.revision, self.records).to_context()
+
+
 class StaleRevision(Exception):
     def __init__(self, expected: int, actual: int):
         self.expected = expected

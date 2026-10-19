@@ -38,6 +38,7 @@ use ordinary functions and need no API key or third-party runtime dependency:
 git clone https://github.com/zhaosknss/agent-state-core.git
 cd agent-state-core
 python -m examples.context_handoff
+python -m examples.paged_records
 python -m examples.information_flow
 python -m examples.collaboration
 python -B tools/verify.py
@@ -46,10 +47,11 @@ python -B tools/verify.py
 | Example | What you can inspect |
 |---|---|
 | [Context handoff](docs/CONTEXT_HANDOFF.md) | Candidates with sources and scope; later revision, withdrawal, and incremental reads |
+| [Paged records](docs/PAGING.md) | Drain one commit across pages, pin history during new writes, and resume from a saved cursor |
 | [Information flow](examples/information_flow.py) | A private transfer, an old observation, a false claim, a failed action, and reopening a saved file |
 | [Collaboration](examples/collaboration.py) | A budget changes from 100 to 50; a proposal based on the old revision cannot overwrite the new state |
 
-The handoff and retrieval recipes are Unreleased source additions, absent from the existing
+Record paging and the handoff/retrieval recipes are Unreleased source additions, absent from the existing
 alpha-2 archives. To use the core in another project, download the wheel from
 [Releases](https://github.com/zhaosknss/agent-state-core/releases), or install the checkout:
 
@@ -73,6 +75,7 @@ case, and share questions or suggestions in [Discussions](https://github.com/zha
 | Persistent consequences | SQLite journal; reopen a file to continue reading and committing |
 | Historical reads | `snapshot(at_revision=N)` and `view(..., at_revision=N)` |
 | Focused context | View filters for kinds, lower revision bound, and latest matching records |
+| Bounded record consumption | Unreleased `view_page()` with record-level continuation, fixed read points, and checkpoint recovery |
 | Stale-write protection | Explicit base revision; mismatches raise `StaleRevision` |
 | Request deduplication | Identical request ID/base/intent/result returns the original commit |
 | Host replay lookup | `get_commit(request_id)` before repeating application work |
@@ -219,6 +222,7 @@ would help your project, and where would the current API get in the way?
 - [Usage guide](docs/GUIDE.md) / [中文指南](docs/GUIDE.zh-CN.md): state, records, queries, actions, and retries.
 - [API & architecture](docs/DESIGN.md): semantics and schema.
 - [Composition guide](docs/COMPOSITION.md) / [中文](docs/COMPOSITION.zh-CN.md): runnable retrieval recipe, adapters, and reproduced boundaries.
+- [Record paging](docs/PAGING.md) / [中文](docs/PAGING.zh-CN.md): complete bounded reads and application-owned checkpoints.
 - [LangGraph](docs/LANGGRAPH.md): optional setup and pause/resume.
 - [Operations](docs/OPERATIONS.md): migration, backups, checks, and troubleshooting.
 - [Validation](docs/VALIDATION.md), [upstream review](docs/UPSTREAM.md), [changelog](CHANGELOG.md).

@@ -10,8 +10,8 @@ from pathlib import Path
 import sqlite3
 
 from .models import (
-    Commit, Intent, Record, RequestConflict, SchemaError, Snapshot,
-    StaleRevision, Transition, View, VisibleRecord,
+    Commit, Intent, Record, RecordCursor, RequestConflict, SchemaError, Snapshot,
+    StaleRevision, Transition, View, ViewPage, VisibleRecord,
 )
 
 
@@ -108,6 +108,12 @@ def _commit(row):
                             data["accepted"], data["reason"])
     intent = None if data["intent"] is None else Intent(**data["intent"])
     return Commit(row["revision"], row["created_at"], transition, intent, row["request_id"])
+
+
+def _visible_records(rows):
+    return tuple(VisibleRecord(
+        f"{row['revision']}:{row['ordinal']}", row["revision"], row["created_at"],
+        row["kind"], json.loads(row["body"]), json.loads(row["source"])) for row in rows)
 
 
 class Ledger:
@@ -297,38 +303,78 @@ class Ledger:
         if last is not None and (type(last) is not int or last < 1):
             raise ValueError("last must be a positive integer or None")
         selected_kinds = None if kinds is None else _labels(kinds, "kinds")
-        columns = "r.revision,r.ordinal,c.created_at,r.kind,r.body,r.source"
         with self._read():
             point = self._read_point(at_revision)
             if after_revision > point:
                 raise ValueError("after_revision exceeds the selected read point")
             if selected_kinds == []:
                 return View(participant, point, ())
-            query = (f"SELECT {columns} FROM record_projection r JOIN commits c USING(revision) "
-                     "WHERE r.is_public=1 AND r.revision>? AND r.revision<=?")
-            params = [after_revision, point]
-            if participant is not None:
-                query += (f" UNION ALL SELECT {columns} FROM record_audience a "
-                          "JOIN record_projection r ON r.revision=a.revision AND r.ordinal=a.ordinal "
-                          "JOIN commits c ON c.revision=r.revision "
-                          "WHERE a.participant=? AND a.revision>? AND a.revision<=?")
-                params.extend([participant, after_revision, point])
-            query = f"SELECT * FROM ({query})"
-            if selected_kinds is not None:
-                query += " WHERE kind IN (" + ",".join("?" for _ in selected_kinds) + ")"
-                params.extend(selected_kinds)
-            direction = "ASC" if last is None else "DESC"
-            query += f" ORDER BY revision {direction},ordinal {direction}"
-            if last is not None:
-                query += " LIMIT ?"
-                params.append(last)
-            rows = self._conn.execute(query, params).fetchall()
+            rows = self._record_rows(participant, point, selected_kinds,
+                                     (after_revision + 1, 0), newest=last is not None, limit=last)
         if last is not None:
             rows.reverse()
-        records = tuple(VisibleRecord(
-            f"{row['revision']}:{row['ordinal']}", row["revision"], row["created_at"],
-            row["kind"], json.loads(row["body"]), json.loads(row["source"])) for row in rows)
-        return View(participant, point, records)
+        return View(participant, point, _visible_records(rows))
+
+    def view_page(self, participant: str | None = None, *,
+                  after: RecordCursor | None = None, at_revision: int | None = None,
+                  kinds: tuple[str, ...] | None = None, limit: int = 100) -> ViewPage:
+        """Read the next oldest matching records, with a resumable record position.
+
+        Keep ledger/participant/kinds fixed for a consumer. Pin at_revision to
+        the first page's revision to drain a finite read point. Save next_cursor
+        only after processing succeeds; it is not a durable acknowledgement.
+        """
+        if participant is not None:
+            _label(participant, "participant")
+        if after is not None and not isinstance(after, RecordCursor):
+            raise TypeError("after must be a RecordCursor or None")
+        cursor = RecordCursor(0) if after is None else after
+        if type(cursor.revision) is not int or cursor.revision < 0:
+            raise ValueError("cursor revision must be a nonnegative integer")
+        if cursor.ordinal is not None and (
+                type(cursor.ordinal) is not int or cursor.ordinal < 0 or cursor.revision == 0):
+            raise ValueError("cursor ordinal requires a positive revision and nonnegative integer")
+        if type(limit) is not int or limit < 1:
+            raise ValueError("limit must be a positive integer")
+        selected_kinds = None if kinds is None else _labels(kinds, "kinds")
+        start = ((cursor.revision + 1, 0) if cursor.ordinal is None
+                 else (cursor.revision, cursor.ordinal + 1))
+        with self._read():
+            point = self._read_point(at_revision)
+            if cursor.revision > point:
+                raise ValueError("cursor exceeds the selected read point")
+            rows = [] if selected_kinds == [] else self._record_rows(
+                participant, point, selected_kinds, start, limit=limit + 1)
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        next_cursor = (RecordCursor(rows[-1]["revision"], rows[-1]["ordinal"])
+                       if has_more else RecordCursor(point))
+        return ViewPage(participant, point, _visible_records(rows), next_cursor, has_more)
+
+    def _record_rows(self, participant, point, kinds, start, *, newest=False, limit=None):
+        """Shared audience/kind projection; callers hold the pinned read transaction."""
+        columns = "r.revision,r.ordinal,c.created_at,r.kind,r.body,r.source"
+        lower = "(r.revision,r.ordinal)>=(?,?) AND r.revision<=?"
+        query = (f"SELECT {columns} FROM record_projection r JOIN commits c USING(revision) "
+                 f"WHERE r.is_public=1 AND {lower}")
+        params = [*start, point]
+        if participant is not None:
+            query += (" UNION ALL SELECT a.revision,a.ordinal,c.created_at,r.kind,r.body,r.source "
+                      "FROM record_audience a "
+                      "JOIN record_projection r ON r.revision=a.revision AND r.ordinal=a.ordinal "
+                      "JOIN commits c ON c.revision=r.revision "
+                      "WHERE a.participant=? AND (a.revision,a.ordinal)>=(?,?) AND a.revision<=?")
+            params.extend([participant, *start, point])
+        query = f"SELECT * FROM ({query})"
+        if kinds is not None:
+            query += " WHERE kind IN (" + ",".join("?" for _ in kinds) + ")"
+            params.extend(kinds)
+        direction = "DESC" if newest else "ASC"
+        query += f" ORDER BY revision {direction},ordinal {direction}"
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
+        return self._conn.execute(query, params).fetchall()
 
     def close(self):
         self._conn.close()

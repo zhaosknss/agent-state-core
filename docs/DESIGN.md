@@ -22,6 +22,8 @@ agree with the current global state.
 | `Commit` | Revision, UTC save time, transition, optional intent and request ID |
 | `Snapshot` | Revision and detached global state dictionary |
 | `View` | Participant, revision, and visible records |
+| `RecordCursor(revision, ordinal=None)` | Consumed record position; None means through the complete revision |
+| `ViewPage` | Scoped records, upper read revision, next cursor, and whether more matching records remain |
 
 ## Public operations
 
@@ -33,11 +35,12 @@ agree with the current global state.
 | `get_commit(request_id)` | Privileged original receipt, or `None` |
 | `snapshot(at_revision=None)` | Global state at the selected revision |
 | `view(participant=None, at_revision=None, after_revision=0, kinds=None, last=None)` | Scoped and optionally filtered records |
+| `view_page(participant=None, after=None, at_revision=None, kinds=None, limit=100)` | Next oldest scoped records and a resumable position; Unreleased |
 | `history(at_revision=None)` | Complete privileged history through a revision |
 | `close()` / context manager | Close the owned connection |
 
 Parameters following `transition` are keyword-only. The view parameters after
-`participant` are also keyword-only. The usage guide shows complete examples.
+`participant` are also keyword-only, including on `view_page`. The usage guide shows complete examples.
 
 Kinds and JSON content are application-defined. `claim`, `observation`, `note`,
 and the example action names are conventions, not registered or special types.
@@ -92,6 +95,35 @@ all records through that revision and must not exceed the read point. A positive
 `last` takes the newest matching records and returns them in chronological order.
 It is a context window, not a pagination cursor. Records in one commit keep their
 original ordinal. `View.revision` is the upper read point even for an empty result.
+
+### Bounded record consumption (Unreleased)
+
+`view_page` is separate from the newest context window. It reads in ascending
+revision/ordinal order, with audience and kinds selected before the SQL limit.
+`after` accepts a `RecordCursor` or None (the start). Cursor revisions must be
+nonnegative integers not exceeding the read point; a record ordinal must be a
+nonnegative integer at a positive revision. Booleans are not integer positions.
+`limit` must be a positive integer. Existing databases require no schema change.
+
+The returned `ViewPage` has the same participant/records context as a View, plus
+`revision`, `next_cursor`, and `has_more`. The database read transaction fixes
+both the reported revision and matching rows. At most `limit + 1` rows are
+fetched, and only the returned records' body/source JSON is decoded. The extra
+row establishes whether more matching records remain at that read point.
+
+If more remain, `next_cursor` identifies the last returned `(revision, ordinal)`.
+Otherwise it is `RecordCursor(page.revision)`, meaning the complete upper revision
+has been consumed for this selection, including hidden or records-free commits.
+Pin later pages to the first page's revision to drain a finite history; after
+completion, omit `at_revision` to poll new commits from the final cursor.
+
+Cursor storage and effects are application-owned. Save progress only after
+successful processing. For the same ledger and fixed participant/kinds selection,
+continuation covers all matching records without skipping within a commit.
+Cursors are positions, not ledger identities or authenticated scope bindings;
+changing selection requires a separate checkpoint or a fresh scan. A page can
+split a commit. There is no queue claim/ack, worker scheduling, or exactly-once
+external processing. See [paging](PAGING.md) for runnable use and JSON recovery.
 
 ## Commit, concurrency, and retry
 

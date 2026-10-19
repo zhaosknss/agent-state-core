@@ -58,6 +58,11 @@ chronological order. It is a context window, not a pagination cursor. An empty
 through N; `at_revision=M` sets the inclusive upper bound. All filters preserve
 the audience restriction. With no filters, the original full-view API still works.
 
+For bounded consumption of every matching record, use the separate
+[`view_page()` API](PAGING.md) and its `RecordCursor`. It can resume inside one
+commit and pin a read point while new commits arrive. `last` keeps its context
+window meaning. The paging API is available in the current Unreleased checkout.
+
 ## 4. Apply a host-selected result
 
 ```python

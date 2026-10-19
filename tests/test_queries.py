@@ -100,6 +100,16 @@ class MigrationTests(unittest.TestCase):
         self.path = Path(self.directory.name) / "legacy.db"
         make_v1(self.path)
 
+    def test_upgraded_history_supports_record_paging_without_another_schema_change(self):
+        from agent_state_core import RecordCursor
+
+        with Ledger(self.path) as ledger:
+            page = ledger.view_page("alice", limit=1)
+            self.assertEqual([r.id for r in page.records], ["1:0"])
+            self.assertEqual(page.next_cursor, RecordCursor(1))
+            self.assertFalse(page.has_more)
+            self.assertEqual(ledger._conn.execute("SELECT schema_version FROM asc_meta").fetchone()[0], 2)
+
     def test_v1_is_upgraded_without_changing_history_or_request_identity(self):
         with Ledger(self.path) as ledger:
             original = ledger.history()[0]

@@ -47,6 +47,10 @@ with Ledger("session.db") as ledger:
 
 `last=10` 取最后十条匹配记录，返回时仍按时间顺序排列，用于控制本次上下文，不是翻页游标。`kinds=()` 返回空记录。`after_revision=N` 排除版本 N 及以前的提交，`at_revision=M` 包含版本 M、排除之后的内容。所有筛选都会保留接收范围检查。不传这些参数时仍可读取完整可见记录。
 
+要逐批读全匹配记录，使用独立的 [`view_page()` 与 `RecordCursor`](PAGING.zh-CN.md)：
+支持从同一次提交内部续读，并在新增提交到来时固定本轮读取上界。
+`last` 保持上下文窗口的原义；分页接口目前在 Unreleased 源码中提供。
+
 ## 4. 提交应用判定的结果
 
 ```python

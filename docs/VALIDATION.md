@@ -1,5 +1,40 @@
 # Validation evidence
 
+## Unreleased record paging — 2026-10-20
+
+Windows/Python 3.13.3 passed **50 tests and six examples** with both optional
+integrations, including ten new paging/migration tests. The runner recorded
+zero connection/DNS/send attempts and one local socket capability probe.
+Core-only verification passed **43 tests/four examples** with zero sockets.
+The existing 12-check composition audit now also verifies that the new paging
+path consumes all five records while the original newest-window example still
+demonstrates why `last` cannot serve as a queue cursor.
+
+Coverage includes a single commit split across pages; an exactly full final page;
+audience/kind projection with varied page sizes; hidden, filtered and state-only
+commits; pinned reads while a separate connection writes; JSON checkpoint recovery
+after reopening; repeated reads before acknowledgement; detached context; invalid
+positions; bounded JSON decoding without reading full commit payloads; and paging
+after the existing schema-v1 migration. Core schema remains v2 with no new runtime
+dependencies. The original full-view/window behavior remains covered.
+
+Local query-plan inspection confirmed use of the existing public-record and
+participant/revision/ordinal indexes. This is not a workload performance claim;
+limits bound returned row counts, not record bytes or execution time.
+
+A fresh wheel built offline with setuptools 82.0.1 passed the same 50-test,
+six-example run under isolated Python, importing the core from the wheel.
+Fifteen Python blocks in the README, usage, and paging guides executed in
+temporary directories with network connections blocked; changed documentation
+links, Python syntax, workflow structure, and Git whitespace were checked.
+The wheel is unpublished and does not replace existing alpha-2 release assets.
+
+The cursor is a position for a fixed ledger/participant/kinds selection; it is
+not bound to those identities. Application processing and cursor persistence
+are outside the read transaction. Tests do not establish exactly-once side
+effects, automated cross-chat synchronization, asynchronous ledger support,
+or improved model reasoning. See [paging](PAGING.md) for supported usage.
+
 ## Unreleased checkout update — 2026-10-19
 
 ### Composition audit and derived retrieval
