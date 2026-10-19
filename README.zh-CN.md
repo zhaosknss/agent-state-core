@@ -24,6 +24,13 @@ agent-state-core 是一个轻量的 Python＋SQLite 库，保存共享状态、�
 [组合指南](docs/COMPOSITION.zh-CN.md)提供已测试的 LangGraph 编排、LangChain Core 存储检索路径，以及实际复现的接入限制；下方示例可以直接查看当前底层的行为。
 参与者也可以是人或普通函数，记录种类和对话策略由接入方选择。
 
+### 一个建立在底层上的应用
+
+[Dialogue Bridge](https://github.com/zhaosknss/codex-dialogue-bridge) 是一个早期 Codex 插件，
+让已有独立对话交换有来源的意见、修订理解，并把有用发现带回各自工作。它使用底层的
+范围记录与分页，对话读取及协作流程留在插件层。欢迎试用，或提出其他组件组合的想法；
+通用底层继续独立于这项应用。
+
 ## 快速试用
 
 需要 **Python 3.11 以上**。从当前源码目录运行，基础示例使用普通函数，不需要 API key 或第三方运行依赖：

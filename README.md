@@ -29,6 +29,15 @@ and a LangChain Core storage/retrieval recipe, with reproduced integration limit
 The runnable examples below show what the core provides today. A human or ordinary
 function can participate; data kinds and conversation policies stay with the application.
 
+### An application built on the core
+
+[Dialogue Bridge](https://github.com/zhaosknss/codex-dialogue-bridge) is an early
+Codex plugin for existing conversations to exchange sourced views, revise their
+understanding, and carry useful discoveries back into their own work. It uses
+the core's scoped records and paging, while chat access and conversation behavior
+stay in the plugin. Try it or suggest another combination; the core remains a
+general library independent of that application.
+
 ## Quick start
 
 Requires **Python 3.11+**. Run from a current source checkout; the base examples
