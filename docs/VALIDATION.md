@@ -2,6 +2,48 @@
 
 ## Unreleased checkout update — 2026-10-19
 
+### Composition audit and derived retrieval
+
+The composition update passed **40 tests and five examples** locally on
+Windows/Python 3.13.3 with real LangGraph 1.2.15 and LangChain Core 1.6.11.
+The runner reported zero connection/DNS/send attempts and one local socket
+capability probe. Base-only counts remain 33 tests/three examples; retrieval-only
+counts are 36/four and LangGraph-only counts are 37/four.
+
+The three new retrieval checks exercise audience-specific caches, execution on
+a worker thread without accessing SQLite, detached returned values, stable old
+read points, rebuilds, and recovery from an external cache creation failure.
+These use real `InMemoryStore`/`RunnableLambda` APIs and keyword matching, not
+models, embeddings, automatic extraction, or semantic quality measurements.
+
+`python -B tools/audit_composition.py` reproduced 12 capabilities and boundaries,
+including independent payload use, JSON adaptation, global revision conflicts,
+whole-value replacement, dedicated schema, thread ownership, context-window
+truncation, application project filtering, and independent ledgers. A boundary
+check passing means the limitation was observed, not removed.
+
+A separate local probe called the existing LangGraph recipe with `ainvoke` and
+reproduced a SQLite thread-affinity error before any new commit (revision stayed
+at 1). Its synchronous nodes capture the caller's connection. The probe created
+the Windows event loop before enabling its network guard so local loop setup
+was not confused with remote traffic; subsequent connection/DNS/send attempts
+were zero. This is a known limitation, not a passing asynchronous integration.
+The canonical retrieval tests use a worker thread without creating an event loop.
+
+Both optional paths are within the LangChain ecosystem. This does not validate
+all frameworks, durable external caches, distributed transactions, bounded queue
+consumption, or async ledger access. The base API and SQLite schema were not changed.
+See [composition](COMPOSITION.md) for commands and integration decisions.
+
+A fresh unpublished wheel built offline with setuptools 82.0.1 passed the same
+40 tests/five examples under isolated Python, with core imports resolved from
+the wheel and recipes from the checkout. It does not replace the release files.
+The two README Python blocks also executed successfully in temporary directories;
+changed documentation links, Python syntax, workflow structure, and Git whitespace
+were checked locally.
+
+### Earlier handoff update
+
 On Windows/Python 3.13.3, the updated checkout passed **37 tests and four
 examples**, including the optional real LangGraph 1.2.15 integration. Of these,
 33 tests and three examples need only the standard library. The runner reported

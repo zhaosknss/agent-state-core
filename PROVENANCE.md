@@ -38,6 +38,10 @@ application-defined note policy; it includes no private chat exports or model
 output dataset. It adds no upstream code or dependency.
 The optional LangGraph integration has its own dependency closure and tests;
 it is not installed for core-only users.
+The Unreleased retrieval recipe is also original example code. It uses real
+LangChain Core storage and Runnable APIs with fictional records; no upstream
+source is copied or vendored. Its separate optional dependency set, fixed
+revision, inspected files, and MIT license are in the upstream review above.
 Setuptools is the build backend (82.0.1 used for the initial local build).
 The CI workflow pins these official actions, whose root licenses were checked
 at the indicated revisions on 2026-10-17; they run on Node 24 in CI:

@@ -65,6 +65,13 @@ LangGraph checkpointer. Replace `propose(context)` with a model or tool adapter
 that accepts the same scoped JSON. Keep privileged snapshots with host code,
 and use one stable, unique request ID per logical review operation.
 
+This recipe supports synchronous `invoke` on the ledger's owning thread. Its
+synchronous nodes capture that connection; `ainvoke` moves those nodes to workers
+and reproduced a SQLite thread-affinity error in the tested environment. Do not
+assume the same graph supports async execution. A separate adapter must manage
+connection ownership (a new in-memory ledger would not share the original data).
+See the [composition boundaries](COMPOSITION.md).
+
 LangGraph re-executes an interrupted node on resume. Place model calls and other
 effects accordingly; the example puts its interrupt before ledger writes and
 checks for a completed host result before repeating them. Two simultaneous
@@ -79,3 +86,5 @@ executor. Further integration designs need their own tests.
 先按预算 100 提方案，在人工复核处暂停；输入预算 50 后，用新的可见资料重新组织方案并提交。即使复核者的私有记录也叫 requirement，planner 仍读不到它。
 
 示例的图检查点只保存在内存，适合演示和测试；进程退出后恢复图执行需要持久化 checkpointer。文件形式的 Ledger 与图检查点各自保存自己的数据，不构成跨两个系统的原子事务。真实模型调用可以接在 `propose(context)` 位置，但模型质量及远端费用没有在这些确定性测试中验证。
+
+当前示例支持在 Ledger 所属线程同步 `invoke`。实际改用 `ainvoke` 时，同步节点转到工作线程并触发 SQLite 线程归属错误；异步接入需要另行管理连接，不能直接复用此图或用新的内存库代替原数据。其他组合限制见[组合指南](COMPOSITION.zh-CN.md)。

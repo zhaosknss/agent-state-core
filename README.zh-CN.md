@@ -21,7 +21,7 @@ agent-state-core 是一个轻量的 Python＋SQLite 库，保存共享状态、�
 | 角色、记忆和生成组件 | 角色互动、社会模拟与叙事应用 |
 | 对话处理、检索和文档整理工具 | 上下文交接、项目接续与理解复用 |
 
-[LangGraph 示例](docs/LANGGRAPH.md)提供了一条已测试的实际接入路径；下方示例可以直接查看当前底层的行为。
+[组合指南](docs/COMPOSITION.zh-CN.md)提供已测试的 LangGraph 编排、LangChain Core 存储检索路径，以及实际复现的接入限制；下方示例可以直接查看当前底层的行为。
 参与者也可以是人或普通函数，记录种类和对话策略由接入方选择。
 
 ## 快速试用
@@ -43,7 +43,7 @@ python -B tools/verify.py
 | [信息流](examples/information_flow.py) | 私下交接、旧观察、错误说法、失败行动，以及重新打开存档 |
 | [协作与条件变化](examples/collaboration.py) | 预算由 100 变为 50，基于旧版本的方案无法覆盖新状态 |
 
-交接示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它。
+交接和检索示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它们。
 在自己的项目里使用核心，可以下载 [Releases](https://github.com/zhaosknss/agent-state-core/releases) 中的 wheel，或安装源码目录：
 
 ```powershell
@@ -70,7 +70,8 @@ python -m pip install .
 | 查询既有结果 | 宿主先按请求 ID 查已提交结果，再决定是否重做节点工作 |
 | 一致落盘 | 日志、状态版本和查询表在同一个事务中提交或回滚 |
 | 旧库升级 | 原子升级首版数据库到 v2 查询结构，保留旧记录和请求指纹 |
-| 外部编排 | 可选 LangGraph 示例接通编排、中断、恢复与节点重跑 |
+| 外部编排 | 可选 LangGraph 示例接通同步编排、中断、恢复与节点重跑 |
+| 派生检索 | 可选 LangChain Core 示例只缓存可见 View；缓存重建由应用决定 |
 
 ## 底层怎样工作
 
@@ -139,7 +140,20 @@ python -B tools/verify.py --langgraph
 
 示例实际使用 **LangGraph 1.2.15** 的 `StateGraph`、`InMemorySaver`、`interrupt` 和 `Command`：先提出方案，在人工复核处暂停，再按人输入的新预算继续并提交。参与者函数取得筛选后的记录；节点重跑时可以查询宿主已提交结果，避免再次提交同一决定。
 
-示例中的参与者是普通函数，没有发模型请求。图检查点使用内存保存，只演示进程内暂停恢复；生产环境需要合适的持久化 checkpointer。存储分工和重试方式见 [接入指南](docs/LANGGRAPH.md)。
+示例中的参与者是普通函数，没有发模型请求。图检查点使用内存保存，只演示进程内暂停恢复；生产环境需要合适的持久化 checkpointer。当前示例使用同步 `invoke`，直接改用 `ainvoke` 会遇到连接的线程归属限制。存储分工和重试方式见 [接入指南](docs/LANGGRAPH.md)。
+
+## 与存储和检索组件组合
+
+```powershell
+python -m pip install -r requirements/retrieval-test.txt
+python -m examples.langchain_retrieval
+python -B tools/verify.py --retrieval
+```
+
+另一个示例实际调用 **LangChain Core 1.6.11** 的 `InMemoryStore` 和 `RunnableLambda`：
+只缓存可见 View 中的记录，保留 ID 和来源，新提交后重建缓存。
+查找使用普通关键词匹配，不调用模型、嵌入或向量库，也不要求安装 LangGraph。
+缓存分工、全局版本冲突、线程约束，以及“最近几条”为何不能当分页，见[组合指南](docs/COMPOSITION.zh-CN.md)。
 
 ## 这一版的实际优化
 
@@ -152,16 +166,19 @@ alpha 2 改为按接收范围查询记录、按字段版本读取状态，避免
 | 项目 | 实际使用方式 |
 |---|---|
 | LangGraph，MIT | 可选依赖，实际调用编排、检查点、中断、恢复接口并测试 |
+| LangChain Core，MIT | 可选示例实际调用内存存储和 Runnable 管线；未复制源码 |
 | Apache Burr，Apache-2.0 | 核对固定版本 SQLite 持久化代码，参考按条件查询的方式；未复制源码 |
 | Graphiti、Generative Agents、Concordia | 设计对照，本版没有接入其运行库，也未据此宣称兼容 |
 
-对应版本、文件、许可证、实际依赖和设计参考分别记录在 [上游核查](docs/UPSTREAM.md) 与 [来源说明](PROVENANCE.md)。核心安装仍不需要第三方运行依赖；LangGraph 及其依赖只随可选接入安装。
+对应版本、文件、许可证、实际依赖和设计参考分别记录在 [上游核查](docs/UPSTREAM.md) 与 [来源说明](PROVENANCE.md)。核心安装仍不需要第三方运行依赖；外部组件只在使用对应可选示例时安装。
 
 ## 当前边界
 
 本库保存宿主判定的结果，没有实现自动核实自然语言、自动更新人物信念、评判文笔或安排讨论流程。版本检查是全局检查，比较保守。记录筛选用于宿主组织上下文，不能代替身份认证或不可信代码隔离。
 
 远端模型和工具调用发生在 SQLite 事务外，本地提交去重不能保证它们只执行一次。真实模型质量、任意预演分支、大规模生产负载及其他框架的完整适配仍未验证。
+
+两个可选示例验证了 LangChain 生态内的具体路径；底层组合核验还复现了全局版本、读取窗口与线程连接方面的限制，见[组合指南](docs/COMPOSITION.zh-CN.md)。
 
 ## 正在探索的用途
 
@@ -179,6 +196,7 @@ alpha 2 改为按接收范围查询记录、按字段版本读取状态，避免
 
 - [完整中文指南](docs/GUIDE.zh-CN.md)：状态、信息、行动、查询与重试。
 - [接口与架构](docs/DESIGN.md)：精确语义和数据库结构。
+- [组合指南](docs/COMPOSITION.zh-CN.md)：可运行的检索组合、适配分工和已复现限制。
 - [LangGraph 接入](docs/LANGGRAPH.md)：安装、暂停恢复与存储分工。
 - [运行与排错](docs/OPERATIONS.md)：升级、备份、验证和常见错误。
 - [验证记录](docs/VALIDATION.md)、[上游核查](docs/UPSTREAM.md)、[版本变化](CHANGELOG.md)。

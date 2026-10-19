@@ -1,6 +1,7 @@
 # Upstream reuse and implementation review
 
-Reviewed on 2026-10-17. This distinguishes a real runtime dependency from design
+Reviewed on 2026-10-17; LangChain Core recipe reviewed on 2026-10-19.
+This distinguishes a real runtime dependency from design
 references and projects that were only compared. The core implementation remains
 independent of an agent orchestration framework.
 
@@ -41,6 +42,32 @@ Official API references used:
 [quickstart](https://docs.langchain.com/oss/python/langgraph/quickstart),
 [interrupts](https://docs.langchain.com/oss/python/langgraph/interrupts),
 [persistence](https://docs.langchain.com/oss/python/langgraph/persistence).
+
+## LangChain Core: optional retrieval recipe dependency
+
+The checkout recipe pins **langchain-core 1.6.11**. Its fixed source revision is
+[`c088db971097f0f12c7b8c30d473e8dbde09c823`](https://github.com/langchain-ai/langchain/tree/c088db971097f0f12c7b8c30d473e8dbde09c823),
+resolved from the `langchain-core==1.6.11` tag. Inspected files:
+
+- [Package metadata](https://github.com/langchain-ai/langchain/blob/c088db971097f0f12c7b8c30d473e8dbde09c823/libs/core/pyproject.toml): version and dependency declarations.
+- [Package MIT license](https://github.com/langchain-ai/langchain/blob/c088db971097f0f12c7b8c30d473e8dbde09c823/libs/core/LICENSE), also checked in the installed distribution.
+- [stores.py](https://github.com/langchain-ai/langchain/blob/c088db971097f0f12c7b8c30d473e8dbde09c823/libs/core/langchain_core/stores.py): `InMemoryStore`, `mset`, `mget`, `yield_keys`.
+- [runnables/base.py](https://github.com/langchain-ai/langchain/blob/c088db971097f0f12c7b8c30d473e8dbde09c823/libs/core/langchain_core/runnables/base.py): `RunnableLambda` and pipeline composition.
+
+The original [recipe](../examples/langchain_retrieval.py) calls these APIs rather
+than copying upstream implementation. It derives a participant-specific cache
+from a scoped View and performs keyword matching. It does not use an embedding
+model, vector store, automatic memory extraction, or upstream source modifications.
+
+[requirements/retrieval-test.txt](../requirements/retrieval-test.txt) requires
+LangChain Core and applies the existing tested version constraints; constraints
+do not install LangGraph. The dependency closure still includes LangChain Core's
+declared HTTP, serialization, validation, and tracing libraries (including
+langsmith). Integration checks disable tracing and block connection/DNS/send
+attempts. The recipe's own APIs do not require remote calls. These dependencies
+are not installed by the base core package. The recipe tests worker-thread
+invocation, not an asynchronous ledger adapter; the existing synchronous
+LangGraph recipe has the thread constraint described in [composition](COMPOSITION.md).
 
 ## Apache Burr: storage design reference
 

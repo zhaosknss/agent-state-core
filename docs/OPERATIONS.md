@@ -52,7 +52,8 @@ journal/query projections manually; schema ownership is checked on open.
 | Old information remains | Historical records are preserved; the application decides how to interpret or summarize them |
 | `SchemaError` | Check that this is a supported dedicated ledger file and that schema migration was not manually altered |
 | SQLite lock timeout | Finish/close competing transactions; use separate connections per thread |
-| Optional import failure | Install `.[langgraph]` in the same Python environment running the example |
+| Optional import failure | Install `.[langgraph]` for the graph example or `-r requirements/retrieval-test.txt` for the retrieval example, using the same Python environment |
+| SQLite thread-affinity error | Keep each connection on its owning thread; the current graph recipe supports synchronous `invoke`, not `ainvoke`; see [composition](COMPOSITION.md) |
 | Invalid JSON / rejected updates | Use finite JSON values with string keys; rejected results must not contain state changes |
 
 ## Performance and size

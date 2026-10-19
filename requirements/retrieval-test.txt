@@ -1,0 +1,3 @@
+# Reuse the tested version constraints without installing LangGraph itself.
+-c langgraph-test.txt
+langchain-core==1.6.11

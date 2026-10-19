@@ -24,7 +24,8 @@ ideas; your application supplies the extra components and connects their APIs.
 | Character, memory, and generation components | Role interaction, social simulation, and narrative applications |
 | Conversation processing, retrieval, and documentation tools | Context handoff, project continuation, and reusable understanding |
 
-The [LangGraph example](docs/LANGGRAPH.md) demonstrates one tested integration.
+The [composition guide](docs/COMPOSITION.md) includes tested LangGraph orchestration
+and a LangChain Core storage/retrieval recipe, with reproduced integration limits.
 The runnable examples below show what the core provides today. A human or ordinary
 function can participate; data kinds and conversation policies stay with the application.
 
@@ -48,7 +49,7 @@ python -B tools/verify.py
 | [Information flow](examples/information_flow.py) | A private transfer, an old observation, a false claim, a failed action, and reopening a saved file |
 | [Collaboration](examples/collaboration.py) | A budget changes from 100 to 50; a proposal based on the old revision cannot overwrite the new state |
 
-The handoff recipe is an Unreleased source addition, absent from the existing
+The handoff and retrieval recipes are Unreleased source additions, absent from the existing
 alpha-2 archives. To use the core in another project, download the wheel from
 [Releases](https://github.com/zhaosknss/agent-state-core/releases), or install the checkout:
 
@@ -77,7 +78,8 @@ case, and share questions or suggestions in [Discussions](https://github.com/zha
 | Host replay lookup | `get_commit(request_id)` before repeating application work |
 | Atomic persistence | Journal, state versions, and audience/query tables share one transaction |
 | Existing alpha-1 databases | Atomic schema-v1 to schema-v2 upgrade on open |
-| External orchestration | Tested optional LangGraph execution, interruption, and resume |
+| External orchestration | Tested optional synchronous LangGraph execution, interruption, and resume |
+| Derived retrieval | Optional LangChain Core recipe built from a scoped View; cache rebuild stays application policy |
 
 ## Architecture
 
@@ -148,7 +150,22 @@ python -B tools/verify.py --langgraph
 
 This uses **LangGraph 1.2.15** `StateGraph`, `InMemorySaver`, `interrupt`, and `Command`. A graph proposes a plan, pauses for human input, receives a changed budget, and commits the selected plan. Participant input comes from scoped records. A host receipt avoids committing the same review twice on node replay. The example functions are deterministic and make no model requests.
 
-Its graph checkpoints live in memory; production graph persistence needs an appropriate LangGraph checkpointer. See the [integration guide](docs/LANGGRAPH.md) for ownership and retry boundaries.
+Its graph checkpoints live in memory; production graph persistence needs an appropriate LangGraph checkpointer. This recipe uses synchronous `invoke`; calling it with `ainvoke` encounters connection thread ownership. See the [integration guide](docs/LANGGRAPH.md) for ownership and retry boundaries.
+
+## Compose with storage and retrieval
+
+```bash
+python -m pip install -r requirements/retrieval-test.txt
+python -m examples.langchain_retrieval
+python -B tools/verify.py --retrieval
+```
+
+This separate recipe uses real **LangChain Core 1.6.11** `InMemoryStore` and
+`RunnableLambda` APIs. It caches only records from a scoped View, retains IDs and
+sources, and rebuilds after new commits. Lookup is ordinary keyword matching;
+no model, embeddings, or vector store is involved. LangGraph is not required.
+See [composition and its limits](docs/COMPOSITION.md) for cache ownership,
+global revision conflicts, thread constraints, and why `last` is not pagination.
 
 ## Alpha-2 storage improvements
 
@@ -161,6 +178,7 @@ In a synthetic 1001-commit case with one visible record, median combined state/v
 | Upstream | Actual use |
 |---|---|
 | LangGraph, MIT | Optional dependency and tested graph/checkpoint/interrupt APIs |
+| LangChain Core, MIT | Optional recipe using real in-memory storage and Runnable APIs; no copied source |
 | Apache Burr, Apache-2.0 | Fixed-version SQLite persistence reviewed for targeted reads; design reference, no copied code |
 | Graphiti, Generative Agents, Concordia | Related designs; not dependencies or validated adapters |
 
@@ -170,7 +188,7 @@ Fixed revisions, inspected files, licenses, and dependencies are in [upstream re
 
 The library records host decisions. It does not infer truth from text, update beliefs automatically, judge prose consistency, or choose a conversation policy. Revision checks are global and conservative. Filtering is host-side context selection, not authentication or untrusted-code isolation. Model/tool effects are outside the SQLite transaction; commit deduplication does not make external calls exactly-once.
 
-The LangGraph example verifies one integration path. Complete compatibility with other frameworks, real model quality, arbitrary speculative branches, and large-scale production workloads remain unvalidated.
+The optional examples verify specific paths within the LangChain ecosystem. Complete compatibility with other frameworks, real model quality, arbitrary speculative branches, and large-scale production workloads remain unvalidated. The [composition audit](docs/COMPOSITION.md) reproduces concrete constraints before proposing further core changes.
 
 ## Directions to explore
 
@@ -200,6 +218,7 @@ would help your project, and where would the current API get in the way?
 
 - [Usage guide](docs/GUIDE.md) / [中文指南](docs/GUIDE.zh-CN.md): state, records, queries, actions, and retries.
 - [API & architecture](docs/DESIGN.md): semantics and schema.
+- [Composition guide](docs/COMPOSITION.md) / [中文](docs/COMPOSITION.zh-CN.md): runnable retrieval recipe, adapters, and reproduced boundaries.
 - [LangGraph](docs/LANGGRAPH.md): optional setup and pause/resume.
 - [Operations](docs/OPERATIONS.md): migration, backups, checks, and troubleshooting.
 - [Validation](docs/VALIDATION.md), [upstream review](docs/UPSTREAM.md), [changelog](CHANGELOG.md).

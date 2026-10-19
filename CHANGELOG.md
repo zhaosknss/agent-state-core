@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Added a real LangChain Core 1.6.11 storage/Runnable recipe using only a scoped
+  View, with participant-specific caches, retained sources, and explicit rebuilds.
+  Lookup is keyword matching; no model or vector search is implied. The core
+  API, schema, and dependency-free base installation are unchanged.
+- Added optional retrieval tests and CI, plus a 12-check composition audit and
+  bilingual guide covering actual integration paths and limitations. Documented
+  global revision conflicts, context-window truncation, dedicated schema, and
+  the existing LangGraph recipe's synchronous-only connection ownership.
+
 - Reworked the English/Chinese landing pages around a composable core, possible
   component combinations, and runnable examples; separated current capabilities
   from exploratory applications. Aligned the package description with that scope.

@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--wheel", type=Path, help="Import the package from this wheel")
     parser.add_argument("--langgraph", action="store_true", help="Also run the installed LangGraph integration")
+    parser.add_argument("--retrieval", action="store_true", help="Also run the installed LangChain retrieval integration")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     package_path = root if args.wheel is None else args.wheel.resolve(strict=True)
@@ -46,6 +47,8 @@ def main():
     suite = unittest.TestLoader().discover(str(root / "tests"))
     if args.langgraph:
         suite.addTests(unittest.TestLoader().discover(str(root / "integration_tests")))
+    if args.retrieval:
+        suite.addTests(unittest.TestLoader().discover(str(root / "retrieval_tests")))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         return 1
@@ -53,8 +56,10 @@ def main():
         runpy.run_path(str(root / "examples" / f"{name}.py"), run_name="__main__")
     if args.langgraph:
         runpy.run_path(str(root / "examples" / "langgraph_collaboration.py"), run_name="__main__")
+    if args.retrieval:
+        runpy.run_path(str(root / "examples" / "langchain_retrieval.py"), run_name="__main__")
     print(json.dumps({
-        "tests": result.testsRun, "examples": 4 if args.langgraph else 3,
+        "tests": result.testsRun, "examples": 3 + int(args.langgraph) + int(args.retrieval),
         "network_attempts": len(network_attempts),
         "socket_creations": len(socket_creations),
         "package": str(agent_state_core.__file__),
