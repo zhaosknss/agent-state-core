@@ -1,16 +1,60 @@
-# agent-state-core
+# Agent State Core
 
-**为智能体应用提供共享状态、各自认知记录和行动后果的基础能力。**
+**同一套通用底层，组合出不同的智能体应用。**
 
-[English](README.md) · [完整使用指南](docs/GUIDE.zh-CN.md) · [接口与架构](docs/DESIGN.md) · [LangGraph 接入](docs/LANGGRAPH.md) · [下载版本](https://github.com/zhaosknss/agent-state-core/releases)
+记录**发生了什么、谁能看到什么，以及行动带来了什么结果**。
+agent-state-core 是一个轻量的 Python＋SQLite 库，保存共享状态、带可见范围的记录、来源与历史。
+可以单独使用，也可以通过应用层适配，与你选择的模型、工具、记忆和编排组件组合。
+参与者、JSON 内容、业务规则与执行顺序由你的应用决定。
 
-多智能体应用里，同一件事可能有几种不同的记录：系统知道钥匙已经交给乙，丙还只知道它原来在甲手里；有人转述了错误说法；一个行动被提出，但没有成功；人后来改了条件，之前的方案需要重新判断。
+**Python 3.11+ · SQLite · MIT · Early alpha** — 核心无第三方运行依赖。
 
-这个库分别保存这些内容，让已经发生的结果持续影响后续。数据、动作、规则、参与者、模型和调用顺序由接入应用决定。核心使用 Python 标准库与 SQLite，另有实际运行的 LangGraph 可选接入示例。
+[English](README.md) · [先运行示例](#快速试用) · [看看怎样组合](#如何组合) · [当前能力](#当前能力) · [用途探索](#正在探索的用途) · [接口与架构](docs/DESIGN.md)
 
-这是早期 alpha。我从自己的项目中拆出这些基础机制，希望大家放到实际项目里试试，也欢迎提问题、建议或不同的设计想法。
+## 如何组合
 
-## 已有完整功能
+按自己的应用选择外围组件。下表是组合思路，额外组件及其接口接线由应用提供。
+
+| 把这个底层与什么组合 | 可以形成哪类应用 |
+|---|---|
+| 任务编排、模型和工具 | 多 AI 协作、工具工作流、人参与复核的任务 |
+| 角色、记忆和生成组件 | 角色互动、社会模拟与叙事应用 |
+| 对话处理、检索和文档整理工具 | 上下文交接、项目接续与理解复用 |
+
+[LangGraph 示例](docs/LANGGRAPH.md)提供了一条已测试的实际接入路径；下方示例可以直接查看当前底层的行为。
+参与者也可以是人或普通函数，记录种类和对话策略由接入方选择。
+
+## 快速试用
+
+需要 **Python 3.11 以上**。从当前源码目录运行，基础示例使用普通函数，不需要 API key 或第三方运行依赖：
+
+```powershell
+git clone https://github.com/zhaosknss/agent-state-core.git
+cd agent-state-core
+python -m examples.context_handoff
+python -m examples.information_flow
+python -m examples.collaboration
+python -B tools/verify.py
+```
+
+| 示例 | 可以直接看到什么 |
+|---|---|
+| [上下文交接](docs/CONTEXT_HANDOFF.zh-CN.md) | 带来源与范围的候选理解，后续修订、撤回及增量读取 |
+| [信息流](examples/information_flow.py) | 私下交接、旧观察、错误说法、失败行动，以及重新打开存档 |
+| [协作与条件变化](examples/collaboration.py) | 预算由 100 变为 50，基于旧版本的方案无法覆盖新状态 |
+
+交接示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它。
+在自己的项目里使用核心，可以下载 [Releases](https://github.com/zhaosknss/agent-state-core/releases) 中的 wheel，或安装源码目录：
+
+```powershell
+python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
+# 或者在源码目录执行：
+python -m pip install .
+```
+
+目前没有发布到 PyPI。欢迎先试一个小例子，按自己的用途调整，再到 [Discussions](https://github.com/zhaosknss/agent-state-core/discussions) 提问题、建议或不同的设计想法。
+
+## 当前能力
 
 | 能力 | 具体做什么 |
 |---|---|
@@ -28,19 +72,10 @@
 | 旧库升级 | 原子升级首版数据库到 v2 查询结构，保留旧记录和请求指纹 |
 | 外部编排 | 可选 LangGraph 示例接通编排、中断、恢复与节点重跑 |
 
-## 可以用在哪
-
-| 用途 | 可组合的机制 |
-|---|---|
-| 多 AI 协作 | 共享已采用决定，各自保留不同输入和私有记录 |
-| 角色与社会模拟 | 不同观察、误传、行动后果，以及之后的状态变化 |
-| 人参与的流程 | 修改条件后继续处理，阻止旧版本结果覆盖新状态 |
-| 工具或代码智能体 | 记录尝试、执行结果，向不同消费者提供所需信息 |
-| 叙事应用 | 分别组织已成立状态、人物掌握的信息和公开呈现 |
-
-这些是用途示例，可以只取其中一部分，也可以自行组合。没有固定的讨论轮数、投票流程、导演、人物或章节结构。
-
 ## 底层怎样工作
+
+系统可能知道钥匙已交给乙，丙却还只知道它原来在甲手里；转述可能出错，提出的行动可能失败，人后来改变条件也可能让旧方案过时。
+底层分别保存这些记录，由应用判断哪些结果更新状态。
 
 ```mermaid
 flowchart LR
@@ -58,31 +93,6 @@ flowchart LR
 ```
 
 宿主用 `snapshot()` 读取全局状态、判断规则并提交结果。参与者用 `view(id).to_context()` 接收公开或明确发给自己的记录。哪些变化成立、哪些信息向谁提供，由应用决定。
-
-## 快速试用
-
-需要 **Python 3.11 以上**。基础示例不需要 API key，也不用安装第三方运行依赖：
-
-```powershell
-git clone https://github.com/zhaosknss/agent-state-core.git
-cd agent-state-core
-python -m examples.information_flow
-python -m examples.collaboration
-python -m examples.context_handoff
-python -B tools/verify.py
-```
-
-第一个例子展示私下交接、旧观察、错误说法、失败行动及重新打开存档。第二个把预算从 100 改为 50，拒绝基于旧版本的方案提交。
-
-在自己的 Python 项目里使用，可以下载 [Releases](https://github.com/zhaosknss/agent-state-core/releases) 中的 wheel，或安装源码目录：
-
-```powershell
-python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
-# 或者在源码目录执行：
-python -m pip install .
-```
-
-目前没有发布到 PyPI。
 
 ## 一个完整的小例子
 
@@ -152,6 +162,18 @@ alpha 2 改为按接收范围查询记录、按字段版本读取状态，避免
 本库保存宿主判定的结果，没有实现自动核实自然语言、自动更新人物信念、评判文笔或安排讨论流程。版本检查是全局检查，比较保守。记录筛选用于宿主组织上下文，不能代替身份认证或不可信代码隔离。
 
 远端模型和工具调用发生在 SQLite 事务外，本地提交去重不能保证它们只执行一次。真实模型质量、任意预演分支、大规模生产负载及其他框架的完整适配仍未验证。
+
+## 正在探索的用途
+
+相同的基础机制可以用于不同应用。以下是希望与大家讨论、尝试的方向，尚未作为完整功能交付，也不是固定开发清单：
+
+- **独立对话共同理解与纠偏。** 保留各自相关经历，交换依据，指出分歧并修正理解；协调者的概括也可以被其他对话质疑。
+- **能积累结果的审查与协作。** 对照不同视角，区分新增发现、重复和误判，把核验后的结果带入后续任务。
+- **不同项目互相吸收经验。** 各自保持目标，参考其他方向的发现，由各应用选择采纳什么，并保留自己的决定与后果。
+- **跨工具和会话的接续。** 探索文档整理、结合既有反馈的交接，以及作为使用入口的 Codex 插件。
+
+当前库保存的是应用提供的记录；读取聊天、自动提取、语义冲突处理和讨论协调仍需上层逻辑或外部组件。
+现有示例不证明模型推理更好、反馈次数更少或调用成本更低。你希望把哪些组件组合起来？当前接口还缺什么？
 
 ## 进一步使用与反馈
 

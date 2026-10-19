@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reworked the English/Chinese landing pages around a composable core, possible
+  component combinations, and runnable examples; separated current capabilities
+  from exploratory applications. Aligned the package description with that scope.
 - Added a runnable context-handoff recipe: project-scoped candidate notes,
   compact source references, explicit revisions and withdrawals, and delta reads.
   It uses existing APIs, fictional messages, and no model calls. The recipe's

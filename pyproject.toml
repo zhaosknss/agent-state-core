@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agent-state-core"
 version = "0.1.0a2"
-description = "Composable state, scoped observations, and action commits for agents"
+description = "A composable Python + SQLite core for shared state, scoped information, and action outcomes"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

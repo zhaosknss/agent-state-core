@@ -1,16 +1,67 @@
-# agent-state-core
+# Agent State Core
 
-**Shared state, individual knowledge, and action outcomes for agent applications.**
+**One core. Different agent applications.**
 
-[中文说明](README.zh-CN.md) · [Usage guide](docs/GUIDE.md) · [API & architecture](docs/DESIGN.md) · [LangGraph](docs/LANGGRAPH.md) · [Releases](https://github.com/zhaosknss/agent-state-core/releases)
+Record **what happened, who can see it, and the outcome of each action**.
+agent-state-core is a small Python + SQLite library for shared state, scoped
+information, sources, and history. Use it on its own or combine it with your
+choice of models, tools, memory systems, and orchestrators through application
+adapters. Your application chooses the participants, JSON content, business
+rules, and execution order.
 
-In an agent application, the host may know that a key changed hands while another participant still has an old observation. A message can contain a mistaken claim. A proposed action may fail. A later human decision can make an earlier proposal outdated. These are separate pieces of information worth preserving.
+**Python 3.11+ · SQLite · MIT · Early alpha** — no third-party core runtime dependencies.
 
-agent-state-core provides small Python primitives for representing those differences and committing their consequences. You choose the data, rules, participants, models, and interaction order. The core uses Python's standard library and SQLite. An optional example actually uses LangGraph for orchestration.
+[中文说明](README.zh-CN.md) · [Try the examples](#quick-start) · [Ways to combine](#ways-to-combine) · [Current capabilities](#current-capabilities) · [Ideas to explore](#directions-to-explore) · [API & architecture](docs/DESIGN.md)
 
-This is an early alpha. I extracted these ideas from a project I was building and would like people to try them in their own applications. Suggestions about use cases, missing features, or awkward interfaces are welcome in [Discussions](https://github.com/zhaosknss/agent-state-core/discussions).
+## Ways to combine
 
-## Complete capability map
+Choose the surrounding components to suit your application. These are composition
+ideas; your application supplies the extra components and connects their APIs.
+
+| Add the core to… | A possible application |
+|---|---|
+| A planner, models, and tools | Multi-agent collaboration, tool workflows, and human-reviewed tasks |
+| Character, memory, and generation components | Role interaction, social simulation, and narrative applications |
+| Conversation processing, retrieval, and documentation tools | Context handoff, project continuation, and reusable understanding |
+
+The [LangGraph example](docs/LANGGRAPH.md) demonstrates one tested integration.
+The runnable examples below show what the core provides today. A human or ordinary
+function can participate; data kinds and conversation policies stay with the application.
+
+## Quick start
+
+Requires **Python 3.11+**. Run from a current source checkout; the base examples
+use ordinary functions and need no API key or third-party runtime dependency:
+
+```bash
+git clone https://github.com/zhaosknss/agent-state-core.git
+cd agent-state-core
+python -m examples.context_handoff
+python -m examples.information_flow
+python -m examples.collaboration
+python -B tools/verify.py
+```
+
+| Example | What you can inspect |
+|---|---|
+| [Context handoff](docs/CONTEXT_HANDOFF.md) | Candidates with sources and scope; later revision, withdrawal, and incremental reads |
+| [Information flow](examples/information_flow.py) | A private transfer, an old observation, a false claim, a failed action, and reopening a saved file |
+| [Collaboration](examples/collaboration.py) | A budget changes from 100 to 50; a proposal based on the old revision cannot overwrite the new state |
+
+The handoff recipe is an Unreleased source addition, absent from the existing
+alpha-2 archives. To use the core in another project, download the wheel from
+[Releases](https://github.com/zhaosknss/agent-state-core/releases), or install the checkout:
+
+```bash
+python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
+# Alternatively, from the checkout:
+python -m pip install .
+```
+
+The project is not published on PyPI. Try a small example, adapt it to your use
+case, and share questions or suggestions in [Discussions](https://github.com/zhaosknss/agent-state-core/discussions).
+
+## Current capabilities
 
 | Capability | API / behavior |
 |---|---|
@@ -28,19 +79,12 @@ This is an early alpha. I extracted these ideas from a project I was building an
 | Existing alpha-1 databases | Atomic schema-v1 to schema-v2 upgrade on open |
 | External orchestration | Tested optional LangGraph execution, interruption, and resume |
 
-## Where it fits
-
-| Application | A possible use |
-|---|---|
-| Multi-agent collaboration | Shared decisions alongside each participant's private notes and inputs |
-| Role/social simulation | Different observations, reported claims, and continuing consequences |
-| Human-assisted workflows | Changed constraints and rejection of results based on an old revision |
-| Tool/coding workflows | Attempted actions, host-selected results, and scoped consumers |
-| Narrative applications | Established state, character information, and public presentation |
-
-There is no mandatory debate, voting, director, chapter, character sheet, or model provider. A human or ordinary function can participate without an LLM.
-
 ## Architecture
+
+The host may know that a key changed hands while another participant still has
+an old observation. A message can contain a mistaken claim, a proposed action
+can fail, and later human input can make an earlier proposal outdated. The core
+keeps these records separate; your application decides what becomes state.
 
 ```mermaid
 flowchart LR
@@ -58,31 +102,6 @@ flowchart LR
 ```
 
 `snapshot()` is privileged host data. `view(participant).to_context()` supplies only public or explicitly addressed records. Your application decides what actually changes state and which information is published to each audience.
-
-## Quick start
-
-Requires **Python 3.11+**. The base examples need no API key or runtime dependency:
-
-```bash
-git clone https://github.com/zhaosknss/agent-state-core.git
-cd agent-state-core
-python -m examples.information_flow
-python -m examples.collaboration
-python -m examples.context_handoff
-python -B tools/verify.py
-```
-
-`information_flow` demonstrates a private transfer, an old observation, a false claim, a failed action, and reopening a saved file. `collaboration` changes a budget from 100 to 50 and rejects the earlier proposal's stale commit.
-
-To use it in another project, download the wheel from [Releases](https://github.com/zhaosknss/agent-state-core/releases), or install the checkout:
-
-```bash
-python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
-# Alternatively, from the checkout:
-python -m pip install .
-```
-
-The project is not published on PyPI.
 
 ## A complete small example
 
@@ -152,6 +171,30 @@ Fixed revisions, inspected files, licenses, and dependencies are in [upstream re
 The library records host decisions. It does not infer truth from text, update beliefs automatically, judge prose consistency, or choose a conversation policy. Revision checks are global and conservative. Filtering is host-side context selection, not authentication or untrusted-code isolation. Model/tool effects are outside the SQLite transaction; commit deduplication does not make external calls exactly-once.
 
 The LangGraph example verifies one integration path. Complete compatibility with other frameworks, real model quality, arbitrary speculative branches, and large-scale production workloads remain unvalidated.
+
+## Directions to explore
+
+The same primitives could support several kinds of applications. These ideas
+are invitations to discuss or build with the core, rather than delivered features
+or a fixed product roadmap:
+
+- **Independent conversations that compare understanding.** Retain each
+  participant's relevant experience, exchange evidence, surface disagreements,
+  and revise interpretations. A coordinator's reading can be challenged too.
+- **Reviews and collaborative work that accumulate results.** Compare different
+  perspectives, distinguish new findings from duplicates or mistakes, and carry
+  validated outcomes into subsequent tasks.
+- **Experience that travels between projects.** Let projects keep their own goals
+  while considering one another's findings. Each application chooses what to
+  reuse and records its own resulting decisions.
+- **Continuity across tools and sessions.** Explore documentation cleanup,
+  feedback-informed handoffs, and an optional Codex plugin as a user-facing entry.
+
+The current library stores records supplied by your application. Conversation
+access, automatic extraction, semantic conflict resolution, and coordination
+need application logic or external components. The examples do not establish
+better reasoning, fewer user corrections, or lower model costs. Which combinations
+would help your project, and where would the current API get in the way?
 
 ## Documentation and feedback
 
