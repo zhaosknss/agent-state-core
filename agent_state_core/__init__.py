@@ -5,7 +5,7 @@ from .models import (
     StaleRevision, Transition, View, ViewPage, VisibleRecord,
 )
 
-__version__ = "0.1.0a2"
+__version__ = "0.1.0a3"
 __all__ = [
     "Commit", "Intent", "JSON", "Ledger", "Record", "RecordCursor", "RequestConflict",
     "SchemaError", "Snapshot", "StaleRevision", "Transition", "View", "ViewPage", "VisibleRecord",

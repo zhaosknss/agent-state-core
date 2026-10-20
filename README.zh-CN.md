@@ -52,11 +52,11 @@ python -B tools/verify.py
 | [信息流](examples/information_flow.py) | 私下交接、旧观察、错误说法、失败行动，以及重新打开存档 |
 | [协作与条件变化](examples/collaboration.py) | 预算由 100 变为 50，基于旧版本的方案无法覆盖新状态 |
 
-分页接口、交接和检索示例属于 Unreleased 源码更新，现有 alpha 2 发布包不包含它们。
+Record paging is included in alpha.3. Handoff and retrieval recipes are in the tagged source checkout; the wheel contains the library rather than examples or optional dependencies.
 在自己的项目里使用核心，可以下载 [Releases](https://github.com/zhaosknss/agent-state-core/releases) 中的 wheel，或安装源码目录：
 
 ```powershell
-python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
+python -m pip install ./agent_state_core-0.1.0a3-py3-none-any.whl
 # 或者在源码目录执行：
 python -m pip install .
 ```
@@ -74,7 +74,7 @@ python -m pip install .
 | 持续保存 | SQLite 文件保存历史；关闭后重新打开可以继续读取和提交 |
 | 历史回看 | 按版本读取当时的状态和可见记录，排除之后发生的内容 |
 | 按需取上下文 | 按记录种类、版本范围和最近匹配条数筛选 |
-| 逐批完整读取 | Unreleased `view_page()` 支持提交内续读、固定读取上界和进度恢复 |
+| 逐批完整读取 | `view_page()` 支持提交内续读、固定读取上界和进度恢复 |
 | 防止过期覆盖 | 提交时核对基础版本，不匹配就返回 `StaleRevision` |
 | 本地提交去重 | 同一请求、基础版本、意图和结果完全一致时，取回原提交 |
 | 查询既有结果 | 宿主先按请求 ID 查已提交结果，再决定是否重做节点工作 |
@@ -138,7 +138,7 @@ with Ledger() as ledger:  # 换成文件路径即可持续保存。
 
 当前源码新增[可运行的交接示例](docs/CONTEXT_HANDOFF.zh-CN.md)：理解作为候选记录，保留适用项目、范围和来源；后来反馈可以修订或撤回。新对话取得最后可见的变化，完整历史仍可回看，也能区分“本次采用”与“以后作为理想模板”。
 
-运行 `python -m examples.context_handoff` 即可。示例使用虚构消息、普通函数和现有接口，辅助函数与组织策略位于示例中，没有写成核心的强制规则。自动提取、读取聊天和安排讨论仍需上层接入，示例不证明模型效果或反馈次数改善。这是 Unreleased 源码更新，现有 alpha 2 发布包不包含新示例。
+Run `python -m examples.context_handoff` from the alpha.3 source checkout. This fictional example demonstrates the protocol, not model quality or fewer user corrections. Its helpers and organization policy remain outside the installed core package.
 
 ## 实际接入 LangGraph
 

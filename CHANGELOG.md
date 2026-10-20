@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0a3 — 2026-10-21
 
 - Added `RecordCursor`, `ViewPage`, and `Ledger.view_page()` for oldest-first,
   scoped record paging within a commit, pinned read points, and resumable positions.
