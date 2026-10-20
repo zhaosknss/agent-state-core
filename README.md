@@ -60,12 +60,14 @@ python -B tools/verify.py
 | [Information flow](examples/information_flow.py) | A private transfer, an old observation, a false claim, a failed action, and reopening a saved file |
 | [Collaboration](examples/collaboration.py) | A budget changes from 100 to 50; a proposal based on the old revision cannot overwrite the new state |
 
-Record paging and the handoff/retrieval recipes are Unreleased source additions, absent from the existing
-alpha-2 archives. To use the core in another project, download the wheel from
-[Releases](https://github.com/zhaosknss/agent-state-core/releases), or install the checkout:
+Alpha.3 includes record paging in the library. The handoff and retrieval recipes
+are available in the tagged source checkout; the wheel contains the library,
+not the examples or their optional dependencies. To use the core in another
+project, download the wheel from [Releases](https://github.com/zhaosknss/agent-state-core/releases),
+or install the checkout:
 
 ```bash
-python -m pip install ./agent_state_core-0.1.0a2-py3-none-any.whl
+python -m pip install ./agent_state_core-0.1.0a3-py3-none-any.whl
 # Alternatively, from the checkout:
 python -m pip install .
 ```
@@ -84,7 +86,7 @@ case, and share questions or suggestions in [Discussions](https://github.com/zha
 | Persistent consequences | SQLite journal; reopen a file to continue reading and committing |
 | Historical reads | `snapshot(at_revision=N)` and `view(..., at_revision=N)` |
 | Focused context | View filters for kinds, lower revision bound, and latest matching records |
-| Bounded record consumption | Unreleased `view_page()` with record-level continuation, fixed read points, and checkpoint recovery |
+| Bounded record consumption | `view_page()` with record-level continuation, fixed read points, and checkpoint recovery |
 | Stale-write protection | Explicit base revision; mismatches raise `StaleRevision` |
 | Request deduplication | Identical request ID/base/intent/result returns the original commit |
 | Host replay lookup | `get_commit(request_id)` before repeating application work |
@@ -150,7 +152,7 @@ with Ledger() as ledger:  # Pass a file path for persistence.
 
 The current checkout includes a [handoff recipe](docs/CONTEXT_HANDOFF.md) for sharing candidate interpretations with their project, scope, and source. Later feedback can revise or withdraw a note; a new conversation receives the latest visible changes while the full history remains available. A delivery accepted for today can stay distinct from an ideal template for future work.
 
-Run `python -m examples.context_handoff`. It uses fictional messages, ordinary functions, and existing APIs. The helpers and latest-visible-key policy live in the example, not the installed core package. Automatic extraction, chat access, and coordination remain application work; the example does not establish model quality or fewer user corrections. This is an Unreleased source addition, not part of the existing alpha-2 artifacts.
+Run `python -m examples.context_handoff` from the alpha.3 source checkout. It uses fictional messages, ordinary functions, and existing APIs. The helpers and latest-visible-key policy live in the example, not the installed core package. Automatic extraction, chat access, and coordination remain application work; the example does not establish model quality or fewer user corrections.
 
 ## Real LangGraph integration
 
