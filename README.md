@@ -1,22 +1,41 @@
 # Agent State Core
 
-**One core. Different agent applications.**
+**Shared state. Distinct views. Traceable changes.**
 
-Record **what happened, who can see it, and the outcome of each action**.
-agent-state-core is a small Python + SQLite library for shared state, scoped
-information, sources, and history. Use it on its own or combine it with your
-choice of models, tools, memory systems, and orchestrators through application
-adapters. Your application chooses the participants, JSON content, business
-rules, and execution order.
+agent-state-core is a small Python + SQLite library for **versioned state,
+scoped records, and action outcomes**. Track what changed, what each participant
+can see, and which results were committed. Combine it with your own models,
+memory systems, retrieval, tools, and orchestrators.
+
+Your application chooses the participants, data, rules, and execution order.
+The same core can support a conversation tool, a review workflow, a simulation,
+or another application that needs persistent state and distinct information views.
 
 **Python 3.11+ · SQLite · MIT · Early alpha** — no third-party core runtime dependencies.
 
-[中文说明](README.zh-CN.md) · [Try the examples](#quick-start) · [Ways to combine](#ways-to-combine) · [Current capabilities](#current-capabilities) · [Ideas to explore](#directions-to-explore) · [API & architecture](docs/DESIGN.md)
+[Try the examples](#quick-start) · [Ways to combine](#ways-to-combine) · [Current capabilities](#current-capabilities) · [Ideas to explore](#directions-to-explore) · [API & architecture](docs/DESIGN.md)
+
+## Why use it
+
+A task changes while agents are working. Participants have different information.
+A retry brings back an earlier result. The core gives your application explicit
+records and revisions to work with:
+
+- **Keep state and statements distinct.** A claim or observation is retained
+  with its source; the application explicitly decides what changes state.
+- **Give each participant its own view.** Read public and addressed records
+  while preserving their original audience and history.
+- **Continue from a known point.** Reopen saved state, page through new records,
+  and reject a commit based on a stale revision.
+
+Use the pieces you need. A commit can carry state updates, records, an action
+result, or a combination; the library does not require a particular agent role
+or conversation structure.
 
 ## Ways to combine
 
-Choose the surrounding components to suit your application. These are composition
-ideas; your application supplies the extra components and connects their APIs.
+Choose the surrounding components to suit your application. The table describes
+applications you can build by connecting those components to the core.
 
 | Add the core to… | A possible application |
 |---|---|
@@ -31,12 +50,13 @@ function can participate; data kinds and conversation policies stay with the app
 
 ### An application built on the core
 
-[Dialogue Bridge](https://github.com/zhaosknss/codex-dialogue-bridge) is an early
-Codex plugin for existing conversations to exchange sourced views, revise their
-understanding, and carry useful discoveries back into their own work. It uses
-the core's scoped records and paging, while chat access and conversation behavior
-stay in the plugin. Try it or suggest another combination; the core remains a
-general library independent of that application.
+[Dialogue Bridge](https://github.com/zhaosknss/codex-dialogue-bridge) is a Codex
+plugin for carrying context, corrections, and useful discoveries across existing
+conversations. It adds chat access and conversation guidance to the core's scoped
+records, source history, and paging. Each conversation can reconsider the shared
+material for its own work.
+
+Try the plugin for that workflow, or use the core to build a different combination.
 
 ## Quick start
 
@@ -230,10 +250,10 @@ would help your project, and where would the current API get in the way?
 
 ## Documentation and feedback
 
-- [Usage guide](docs/GUIDE.md) / [中文指南](docs/GUIDE.zh-CN.md): state, records, queries, actions, and retries.
+- [Usage guide](docs/GUIDE.md): state, records, queries, actions, and retries.
 - [API & architecture](docs/DESIGN.md): semantics and schema.
-- [Composition guide](docs/COMPOSITION.md) / [中文](docs/COMPOSITION.zh-CN.md): runnable retrieval recipe, adapters, and reproduced boundaries.
-- [Record paging](docs/PAGING.md) / [中文](docs/PAGING.zh-CN.md): complete bounded reads and application-owned checkpoints.
+- [Composition guide](docs/COMPOSITION.md): runnable retrieval recipe, adapters, and reproduced boundaries.
+- [Record paging](docs/PAGING.md): complete bounded reads and application-owned checkpoints.
 - [LangGraph](docs/LANGGRAPH.md): optional setup and pause/resume.
 - [Operations](docs/OPERATIONS.md): migration, backups, checks, and troubleshooting.
 - [Validation](docs/VALIDATION.md), [upstream review](docs/UPSTREAM.md), [changelog](CHANGELOG.md).
