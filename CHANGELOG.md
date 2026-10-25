@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Bound `history(at_revision=...)` in SQL instead of fetching later commit
+  payloads. Revision validation and row selection use the same read transaction,
+  preserving a stable read point during concurrent writes. No schema change.
+
 ## 0.1.0a3 — 2026-10-21
 
 - Added `RecordCursor`, `ViewPage`, and `Ledger.view_page()` for oldest-first,
