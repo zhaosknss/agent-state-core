@@ -261,15 +261,11 @@ class Ledger:
 
     def history(self, *, at_revision: int | None = None) -> tuple[Commit, ...]:
         """Privileged host history, including private records and action results."""
-        if at_revision is not None and (type(at_revision) is not int or at_revision < 0):
-            raise ValueError("at_revision must be a nonnegative integer or None")
-        # One SELECT fixes the read point even if another connection commits.
-        rows = self._conn.execute("SELECT * FROM commits ORDER BY revision").fetchall()
-        actual = rows[-1]["revision"] if rows else 0
-        if at_revision is not None and at_revision > actual:
-            raise ValueError(f"Revision {at_revision} does not exist")
-        return tuple(_commit(row) for row in rows
-                     if at_revision is None or row["revision"] <= at_revision)
+        with self._read():
+            point = self._read_point(at_revision)
+            rows = self._conn.execute(
+                "SELECT * FROM commits WHERE revision<=? ORDER BY revision", (point,)).fetchall()
+        return tuple(_commit(row) for row in rows)
 
     def get_commit(self, request_id: str) -> Commit | None:
         """Host lookup for a committed request, useful before replaying a graph node."""

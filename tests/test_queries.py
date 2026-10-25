@@ -63,6 +63,36 @@ class QueryTests(unittest.TestCase):
         result.transition.updates["x"].append(2)
         self.assertEqual(self.ledger.get_commit("done").transition.updates, {"x": [1]})
 
+    def test_old_history_read_does_not_scan_unrelated_later_commits(self):
+        for n in range(2000):
+            self.ledger.commit(Transition(updates={"counter": n}), expected_revision=n)
+        work = 0
+        def bounded_work():
+            nonlocal work
+            work += 100
+            return int(work > 2000)
+        self.ledger._conn.set_progress_handler(bounded_work, 100)
+        try:
+            history = self.ledger.history(at_revision=1)
+        finally:
+            self.ledger._conn.set_progress_handler(None, 0)
+        self.assertEqual([c.revision for c in history], [1])
+        self.assertEqual(history[0].transition.updates, {"counter": 0})
+
+    def test_history_keeps_one_read_point_when_another_connection_commits(self):
+        with TemporaryDirectory() as directory, Ledger(Path(directory) / "ledger.db") as reader:
+            reader._conn.execute("PRAGMA journal_mode=WAL")
+            reader.commit(Transition(updates={"counter": 1}), expected_revision=0)
+            with Ledger(Path(directory) / "ledger.db") as writer:
+                original = reader._read_point
+                def concurrent_write(at_revision):
+                    point = original(at_revision)
+                    writer.commit(Transition(updates={"counter": 2}), expected_revision=1)
+                    return point
+                with patch.object(reader, "_read_point", side_effect=concurrent_write):
+                    self.assertEqual([c.revision for c in reader.history()], [1])
+                self.assertEqual(reader.revision, 2)
+
     def test_projection_failure_rolls_back_journal_and_all_query_tables(self):
         self.ledger.commit(Transition(updates={"x": 1}), expected_revision=0)
         self.ledger._conn.execute(
